@@ -1,120 +1,131 @@
-import { Link, createFileRoute } from '@tanstack/react-router'
-import { useMutation } from 'convex/react'
-import { useSuspenseQuery } from '@tanstack/react-query'
-import { convexQuery } from '@convex-dev/react-query'
+import { useState } from 'react'
+import type { FormEvent } from 'react'
+import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { useAction, useMutation } from 'convex/react'
+import { Search } from 'lucide-react'
 import { api } from '../../convex/_generated/api'
+import type { Id } from '../../convex/_generated/dataModel'
+import { SearchLoadingScreen } from '~/components/search-loading-screen'
+import {
+  ProviderFilter,
+  allProviders,
+} from '~/components/provider-filter'
+import { Button } from '~/components/ui/button'
+import { Textarea } from '~/components/ui/textarea'
 
 export const Route = createFileRoute('/')({
-  component: Home,
+  component: HomePage,
 })
 
-function Home() {
-  const {
-    data: { viewer, numbers },
-  } = useSuspenseQuery(convexQuery(api.myFunctions.listNumbers, { count: 10 }))
+function HomePage() {
+  const navigate = useNavigate()
+  const initSearch = useMutation(api.searchProgress.initSearch)
+  const submitSearch = useAction(api.searchActions.submitSearch)
 
-  const addNumber = useMutation(api.myFunctions.addNumber)
-
-  return (
-    <main className="p-8 flex flex-col gap-16">
-      <h1 className="text-4xl font-bold text-center">
-        Convex + Tanstack Start
-      </h1>
-      <div className="flex flex-col gap-8 max-w-lg mx-auto">
-        <p>Welcome {viewer ?? 'Anonymous'}!</p>
-        <p>
-          Click the button below and open this page in another window - this
-          data is persisted in the Convex cloud database!
-        </p>
-        <p>
-          <button
-            className="bg-dark dark:bg-light text-light dark:text-dark text-sm px-4 py-2 rounded-md border-2"
-            onClick={() => {
-              void addNumber({ value: Math.floor(Math.random() * 10) })
-            }}
-          >
-            Add a random number
-          </button>
-        </p>
-        <p>
-          Numbers:{' '}
-          {numbers.length === 0 ? 'Click the button!' : numbers.join(', ')}
-        </p>
-        <p>
-          Edit{' '}
-          <code className="text-sm font-bold font-mono bg-slate-200 dark:bg-slate-800 px-1 py-0.5 rounded-md">
-            convex/myFunctions.ts
-          </code>{' '}
-          to change your backend
-        </p>
-        <p>
-          Edit{' '}
-          <code className="text-sm font-bold font-mono bg-slate-200 dark:bg-slate-800 px-1 py-0.5 rounded-md">
-            src/routes/index.tsx
-          </code>{' '}
-          to change your frontend
-        </p>
-        <p>
-          Open{' '}
-          <Link
-            to="/anotherPage"
-            className="text-blue-600 underline hover:no-underline"
-          >
-            another page
-          </Link>{' '}
-          to send an action.
-        </p>
-        <div className="flex flex-col">
-          <p className="text-lg font-bold">Useful resources:</p>
-          <div className="flex gap-2">
-            <div className="flex flex-col gap-2 w-1/2">
-              <ResourceCard
-                title="Convex docs"
-                description="Read comprehensive documentation for all Convex features."
-                href="https://docs.convex.dev/home"
-              />
-              <ResourceCard
-                title="Stack articles"
-                description="Learn about best practices, use cases, and more from a growing
-            collection of articles, videos, and walkthroughs."
-                href="https://www.typescriptlang.org/docs/handbook/2/basic-types.html"
-              />
-            </div>
-            <div className="flex flex-col gap-2 w-1/2">
-              <ResourceCard
-                title="Templates"
-                description="Browse our collection of templates to get started quickly."
-                href="https://www.convex.dev/templates"
-              />
-              <ResourceCard
-                title="Discord"
-                description="Join our developer community to ask questions, trade tips & tricks,
-            and show off your projects."
-                href="https://www.convex.dev/community"
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-    </main>
+  const [query, setQuery] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [progressId, setProgressId] = useState<Id<'searchProgress'> | null>(
+    null,
   )
-}
+  const [submitError, setSubmitError] = useState<string | null>(null)
+  const [selectedProviders, setSelectedProviders] = useState<string[]>([
+    ...allProviders,
+  ])
 
-function ResourceCard({
-  title,
-  description,
-  href,
-}: {
-  title: string
-  description: string
-  href: string
-}) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+
+    const trimmed = query.trim()
+
+    if (!trimmed) {
+      setSubmitError('Enter a search prompt.')
+      return
+    }
+
+    setSubmitError(null)
+
+    try {
+      const id = await initSearch({ prompt: trimmed })
+      setProgressId(id)
+      setIsSubmitting(true)
+
+      const result = await submitSearch({
+        prompt: trimmed,
+        progressId: id,
+        selectedProviders,
+      })
+
+      await navigate({
+        to: '/results',
+        search: {
+          q: trimmed,
+          searchId: result.searchId,
+        },
+      })
+    } catch (error) {
+      setSubmitError(
+        error instanceof Error ? error.message : 'Something went wrong.',
+      )
+    } finally {
+      setIsSubmitting(false)
+      setProgressId(null)
+    }
+  }
+
   return (
-    <div className="flex flex-col gap-2 bg-slate-200 dark:bg-slate-800 p-4 rounded-md h-28 overflow-auto">
-      <a href={href} className="text-sm underline hover:no-underline">
-        {title}
-      </a>
-      <p className="text-xs">{description}</p>
-    </div>
+    <main className="flex min-h-screen flex-col items-center justify-center bg-background px-4 text-foreground">
+      <div className="flex w-full max-w-2xl flex-col items-center gap-8">
+        <div className="flex flex-col items-center gap-3 text-center">
+          <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
+            Job Search
+          </h1>
+          <p className="max-w-md text-base text-muted-foreground">
+            Describe the role you&apos;re looking for and we&apos;ll search
+            approved job boards in real time.
+          </p>
+        </div>
+
+        <form
+          className="flex w-full flex-col gap-4"
+          onSubmit={handleSubmit}
+        >
+          <Textarea
+            className="min-h-28 resize-none rounded-2xl px-4 py-3 text-base"
+            disabled={isSubmitting}
+            onChange={(event) => {
+              setQuery(event.target.value)
+              if (submitError) setSubmitError(null)
+            }}
+            placeholder='e.g. "Senior backend engineer, remote, Python or Go, Europe"'
+            value={query}
+          />
+
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <ProviderFilter
+              selected={selectedProviders}
+              onChange={setSelectedProviders}
+            />
+
+            <Button
+              className="rounded-full"
+              disabled={isSubmitting}
+              size="lg"
+              type="submit"
+            >
+              <Search data-icon="inline-start" />
+              Search
+            </Button>
+          </div>
+
+          {submitError ? (
+            <p className="text-sm text-destructive">{submitError}</p>
+          ) : null}
+        </form>
+      </div>
+
+      {isSubmitting && progressId ? (
+        <SearchLoadingScreen query={query.trim()} progressId={progressId} />
+      ) : null}
+    </main>
   )
 }
