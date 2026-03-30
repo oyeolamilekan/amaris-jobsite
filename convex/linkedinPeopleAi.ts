@@ -1,50 +1,112 @@
-import { Output, generateText } from 'ai'
-import { getJobSearchModel } from './searchModel'
-import { structureLinkedInPeopleSystem } from './searchPrompts'
-import {
-  structuredLinkedInPeopleResultSchema,
-} from './searchSchemas'
+import type { StructuredLinkedInPerson } from './searchSchemas'
 import type { TavilySearchResult } from './searchTavily'
 
+const LINKEDIN_TITLE_SUFFIX = /\s*[\|–—-]\s*LinkedIn\s*$/i
+const TITLE_SEPARATOR = /\s*[\|–—-]\s*/
+
 /**
- * Runs the LinkedIn enrichment pass that turns public web results into a short
- * list of likely employees or hiring contacts.
+ * Parses a LinkedIn search result title into a name and headline.
  *
- * @param input - The retrieval context for the LinkedIn people pass.
- * @param input.company - The company name being researched.
- * @param input.jobTitle - The role title used to bias results.
- * @param input.query - The deterministic Tavily query that was executed.
- * @param input.tavilyResults - The raw Tavily response to structure.
+ * Common formats:
+ *   "Jane Doe - Senior Engineer at Acme | LinkedIn"
+ *   "Jane Doe – Acme Corp | LinkedIn"
+ *   "Jane Doe - Acme Corp - LinkedIn"
+ */
+function parseLinkedInTitle(title: string): {
+  name: string | undefined
+  headline: string | undefined
+} {
+  const cleaned = title.replace(LINKEDIN_TITLE_SUFFIX, '').trim()
+  if (!cleaned) return { name: undefined, headline: undefined }
+
+  const firstDash = cleaned.search(/\s+[-–—]\s+/)
+  if (firstDash === -1) {
+    return { name: cleaned, headline: undefined }
+  }
+
+  const name = cleaned.slice(0, firstDash).trim()
+  const headline = cleaned
+    .slice(firstDash)
+    .replace(/^\s*[-–—]\s*/, '')
+    .replace(TITLE_SEPARATOR, ' | ')
+    .trim()
+
+  return {
+    name: name || undefined,
+    headline: headline || undefined,
+  }
+}
+
+const LOCATION_PATTERN =
+  /(?:^|\.\s+|,\s+|\s{2,})([A-Z][a-zA-Z\u00C0-\u024F\s]+(?:,\s*[A-Z][a-zA-Z\u00C0-\u024F\s]+)+)/
+
+/**
+ * Attempts to extract a location from LinkedIn content. Looks for patterns
+ * like "City, State" or "City, Country".
+ */
+function extractLocation(content: string): string | undefined {
+  const match = content.match(LOCATION_PATTERN)
+  if (!match) return undefined
+
+  const candidate = match[1].trim()
+  const lower = candidate.toLowerCase()
+  const skipWords = [
+    'about',
+    'experience',
+    'education',
+    'skills',
+    'linkedin',
+    'privacy',
+    'cookie',
+    'user agreement',
+  ]
+  if (skipWords.some((w) => lower.includes(w))) return undefined
+  if (candidate.length > 60) return undefined
+
+  return candidate
+}
+
+/**
+ * Parses Tavily results into structured LinkedIn people using deterministic
+ * title parsing and content extraction — no LLM calls needed.
+ *
+ * @param tavilyResults - The raw Tavily response to structure.
  * @returns Structured LinkedIn people results ready for normalization.
  */
-export async function structureLinkedInPeopleResults({
-  company,
-  jobTitle,
-  query,
-  tavilyResults,
-}: {
-  company: string
-  jobTitle: string
-  query: string
-  tavilyResults: TavilySearchResult
-}) {
-  const { output } = await generateText({
-    model: getJobSearchModel(),
-    system: structureLinkedInPeopleSystem,
-    prompt: JSON.stringify(
-      {
-        targetCompany: company,
-        targetRole: jobTitle,
-        generatedQuery: query,
-        tavilyResults,
-      },
-      null,
-      2,
-    ),
-    output: Output.object({
-      schema: structuredLinkedInPeopleResultSchema,
-    }),
-  })
+export function structureLinkedInPeopleResults(
+  tavilyResults: TavilySearchResult,
+): {
+  summary: string
+  people: (StructuredLinkedInPerson & { linkedinUrl: string })[]
+} {
+  const people = tavilyResults.results
+    .map((result) => {
+      const { name, headline } = parseLinkedInTitle(result.title)
+      if (!name) return null
 
-  return output
+      const content = [result.content, result.rawContent ?? '']
+        .join(' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+
+      const location = extractLocation(content)
+
+      return {
+        name,
+        headline,
+        linkedinUrl: result.url,
+        ...(location ? { location } : {}),
+      }
+    })
+    .filter(
+      (p): p is NonNullable<typeof p> => p !== null,
+    )
+
+  return {
+    summary:
+      people.length > 0
+        ? `Found ${people.length} LinkedIn profile${people.length === 1 ? '' : 's'}.`
+        : 'No credible LinkedIn profiles found.',
+    people,
+  }
 }

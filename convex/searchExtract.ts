@@ -50,9 +50,7 @@ type TavilySingleResult = TavilySearchResult['results'][number]
 export async function extractJobDetails(
   result: TavilySingleResult,
 ): Promise<JobExtraction> {
-  const content = result.rawContent
-    ? truncateForExtraction(result.rawContent)
-    : result.content
+  const content = result.rawContent ?? result.content
 
   try {
     const { output } = await generateText({

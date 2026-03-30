@@ -79,6 +79,28 @@ export const getLinkedInPeopleJobContextInternal = internalQuery({
 })
 
 /**
+ * Updates the status of an in-progress LinkedIn people search so the UI can
+ * show real-time progress stages.
+ */
+export const updateLinkedInPeopleSearchStatus = internalMutation({
+  args: {
+    searchId: v.id('linkedinPeopleSearches'),
+    status: linkedinPeopleSearchStatusValidator,
+    summary: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const doc = await ctx.db.get(args.searchId)
+    if (doc === null) return
+
+    await ctx.db.patch(args.searchId, {
+      status: args.status,
+      ...(args.summary !== undefined ? { summary: args.summary } : {}),
+      updatedAt: Date.now(),
+    })
+  },
+})
+
+/**
  * Inserts or replaces the saved LinkedIn people search document for a job
  * result.
  */

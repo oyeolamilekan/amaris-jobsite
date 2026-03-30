@@ -1,7 +1,6 @@
 import {
   LINKEDIN_COMPANY_TERM_MAX_LENGTH,
   LINKEDIN_PEOPLE_PRIORITY_TERMS,
-  LINKEDIN_ROLE_TERM_MAX_LENGTH,
 } from './searchConstants'
 
 /**
@@ -32,38 +31,29 @@ function shorten(value: string, maxLength: number) {
 }
 
 /**
- * Builds a deterministic LinkedIn people lookup query for a company and target
- * job title.
+ * Builds a deterministic LinkedIn people lookup query for a company, focused
+ * on priority terms like recruiter and hiring manager.
  *
- * @param input - The company and role context for the lookup.
+ * @param input - The company context for the lookup.
  * @param input.company - The company name attached to the job result.
- * @param input.jobTitle - The target role title attached to the job result.
  * @returns A LinkedIn-focused Tavily query string.
  */
 export function buildLinkedInPeopleSearchQuery({
   company,
-  jobTitle,
 }: {
   company: string
-  jobTitle: string
 }) {
   const companyTerm = shorten(
     sanitizeQueryTerm(company),
     LINKEDIN_COMPANY_TERM_MAX_LENGTH,
   )
-  const roleTerm = shorten(
-    sanitizeQueryTerm(jobTitle),
-    LINKEDIN_ROLE_TERM_MAX_LENGTH,
-  )
-  const peopleClauses: string[] = [...LINKEDIN_PEOPLE_PRIORITY_TERMS]
-
-  if (roleTerm) {
-    peopleClauses.push(roleTerm)
-  }
+  const peopleClauses = LINKEDIN_PEOPLE_PRIORITY_TERMS.map(
+    (term) => `"${term}"`,
+  ).join(' OR ')
 
   return [
     '(site:linkedin.com/in OR site:linkedin.com/pub)',
     `"${companyTerm}"`,
-    `(${peopleClauses.map((value) => `"${value}"`).join(' OR ')})`,
+    `(${peopleClauses})`,
   ].join(' AND ')
 }

@@ -7,6 +7,8 @@ import {
   BriefcaseBusiness,
   LoaderCircle,
   MapPin,
+  Search,
+  Sparkles,
   Users,
 } from 'lucide-react'
 import { Badge } from '~/components/ui/badge'
@@ -76,7 +78,9 @@ function LinkedInPeopleDialogContent({
 
   const peopleSearch = data ?? null
   const people = peopleSearch?.people ?? []
-  const isBusy = isLoading || isQueryLoading
+  const status = peopleSearch?.status ?? null
+  const isInProgress = status === 'searching' || status === 'enriching'
+  const isBusy = isLoading || isQueryLoading || isInProgress
 
   return (
     <Dialog onOpenChange={onOpenChange} open>
@@ -97,10 +101,31 @@ function LinkedInPeopleDialogContent({
               <CardContent className="flex flex-col items-center gap-4 py-10 text-center">
                 <LoaderCircle className="size-8 animate-spin text-muted-foreground" />
                 <div className="space-y-2">
-                  <p className="font-medium">Searching LinkedIn people</p>
-                  <p className="text-sm text-muted-foreground">
-                    Looking for public profiles connected to {job.company}.
+                  <p className="font-medium">
+                    {status === 'enriching'
+                      ? 'Analyzing profiles'
+                      : 'Searching LinkedIn people'}
                   </p>
+                  <p className="text-sm text-muted-foreground">
+                    {status === 'enriching'
+                      ? `Identifying relevant people at ${job.company}.`
+                      : `Looking for public profiles connected to ${job.company}.`}
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-6 pt-2 text-xs text-muted-foreground">
+                  <span className="inline-flex items-center gap-1.5">
+                    <Search className={`size-3.5 ${status === 'searching' ? 'text-foreground' : ''}`} />
+                    <span className={status === 'searching' ? 'font-medium text-foreground' : ''}>
+                      {status === 'enriching' ? 'Searched' : 'Searching'}
+                    </span>
+                  </span>
+                  <span className="inline-flex items-center gap-1.5">
+                    <Sparkles className={`size-3.5 ${status === 'enriching' ? 'text-foreground' : ''}`} />
+                    <span className={status === 'enriching' ? 'font-medium text-foreground' : ''}>
+                      Analyzing
+                    </span>
+                  </span>
                 </div>
               </CardContent>
             </Card>
@@ -155,8 +180,6 @@ function LinkedInPeopleDialogContent({
                   </CardHeader>
 
                   <CardContent className="space-y-4">
-                    <p className="text-sm leading-6">{person.reason}</p>
-
                     <div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
                       <span className="inline-flex items-center gap-2">
                         <BriefcaseBusiness className="size-4" />

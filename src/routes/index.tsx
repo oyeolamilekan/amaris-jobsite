@@ -12,6 +12,7 @@ import {
 } from '~/components/provider-filter'
 import { Button } from '~/components/ui/button'
 import { Textarea } from '~/components/ui/textarea'
+import { ThemeToggle } from '~/components/theme-toggle'
 
 export const Route = createFileRoute('/')({
   component: HomePage,
@@ -73,7 +74,11 @@ function HomePage() {
   }
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-background px-4 text-foreground">
+    <main className="relative flex min-h-screen flex-col items-center justify-center bg-background px-4 text-foreground">
+      <div className="absolute right-4 top-4">
+        <ThemeToggle />
+      </div>
+
       <div className="flex w-full max-w-2xl flex-col items-center gap-8">
         <div className="flex flex-col items-center gap-3 text-center">
           <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">

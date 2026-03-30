@@ -64,6 +64,8 @@ export const searchFailureTraceValidator = v.object(searchFailureTraceFields)
 export const linkedinPeopleSearchStatusValidator = v.union(
   v.literal(linkedinPeopleSearchStatusValues[0]),
   v.literal(linkedinPeopleSearchStatusValues[1]),
+  v.literal(linkedinPeopleSearchStatusValues[2]),
+  v.literal(linkedinPeopleSearchStatusValues[3]),
 )
 
 /**
@@ -166,10 +168,10 @@ export const jobResultFields = {
  */
 export const savedLinkedInPersonFields = {
   rank: v.number(),
-  name: v.string(),
-  headline: v.string(),
-  linkedinUrl: v.string(),
-  reason: v.string(),
+  name: v.optional(v.string()),
+  headline: v.optional(v.string()),
+  linkedinUrl: v.optional(v.string()),
+  reason: v.optional(v.string()),
   location: v.optional(v.string()),
 }
 

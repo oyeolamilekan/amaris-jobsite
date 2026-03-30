@@ -33,19 +33,6 @@ export const ensureLinkedInPeopleForJob = action({
   ): Promise<{
     searchId: Id<'linkedinPeopleSearches'>
   }> => {
-    const existing: Id<'linkedinPeopleSearches'> | null = await ctx.runQuery(
-      internal.linkedinPeople.getLinkedInPeopleSearchForJobInternal,
-      {
-        jobResultId: args.jobResultId,
-      },
-    ).then((search) => search?._id ?? null)
-
-    if (existing !== null) {
-      return {
-        searchId: existing,
-      }
-    }
-
     const job = await ctx.runQuery(
       internal.linkedinPeople.getLinkedInPeopleJobContextInternal,
       {
@@ -60,24 +47,33 @@ export const ensureLinkedInPeopleForJob = action({
     const { tavilyApiKey } = getSearchRuntimeConfig()
     const query = buildLinkedInPeopleSearchQuery({
       company: job.company,
-      jobTitle: job.title,
     })
+
+    const searchId: Id<'linkedinPeopleSearches'> = await ctx.runMutation(
+      internal.linkedinPeople.saveLinkedInPeopleSearch,
+      {
+        jobResultId: args.jobResultId,
+        company: job.company,
+        jobTitle: job.title,
+        status: 'searching',
+        query,
+        summary: `Searching for people at ${job.company}…`,
+        people: [],
+      },
+    )
+
     const tavilyResults = await searchTavily(tavilyApiKey, query, {
       searchDepth: DEFAULT_LINKEDIN_PEOPLE_SEARCH_DEPTH,
       maxResults: DEFAULT_LINKEDIN_PEOPLE_MAX_RESULTS,
     })
 
     if (tavilyResults.results.length === 0) {
-      const searchId: Id<'linkedinPeopleSearches'> = await ctx.runMutation(
-        internal.linkedinPeople.saveLinkedInPeopleSearch,
+      await ctx.runMutation(
+        internal.linkedinPeople.updateLinkedInPeopleSearchStatus,
         {
-          jobResultId: args.jobResultId,
-          company: job.company,
-          jobTitle: job.title,
+          searchId,
           status: 'no_results',
-          query,
           summary: `No public LinkedIn profiles were found for ${job.company} yet.`,
-          people: [],
         },
       )
 
@@ -86,29 +82,30 @@ export const ensureLinkedInPeopleForJob = action({
       }
     }
 
-    const structuredResults = await structureLinkedInPeopleResults({
-      company: job.company,
-      jobTitle: job.title,
-      query,
-      tavilyResults,
-    })
-
-    const people = normalizeLinkedInPeople(structuredResults.people)
-    const searchId: Id<'linkedinPeopleSearches'> = await ctx.runMutation(
-      internal.linkedinPeople.saveLinkedInPeopleSearch,
+    await ctx.runMutation(
+      internal.linkedinPeople.updateLinkedInPeopleSearchStatus,
       {
-        jobResultId: args.jobResultId,
-        company: job.company,
-        jobTitle: job.title,
-        status: people.length > 0 ? 'completed' : 'no_results',
-        query,
-        summary:
-          people.length > 0
-            ? structuredResults.summary
-            : `No strong LinkedIn profile matches were found for ${job.company}.`,
-        people,
+        searchId,
+        status: 'enriching',
+        summary: `Analyzing profiles for ${job.company}…`,
       },
     )
+
+    const structuredResults = structureLinkedInPeopleResults(tavilyResults)
+
+    const people = normalizeLinkedInPeople(structuredResults.people)
+    await ctx.runMutation(internal.linkedinPeople.saveLinkedInPeopleSearch, {
+      jobResultId: args.jobResultId,
+      company: job.company,
+      jobTitle: job.title,
+      status: people.length > 0 ? 'completed' : 'no_results',
+      query,
+      summary:
+        people.length > 0
+          ? structuredResults.summary
+          : `No strong LinkedIn profile matches were found for ${job.company}.`,
+      people,
+    })
 
     return {
       searchId,

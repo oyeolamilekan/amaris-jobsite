@@ -51,15 +51,28 @@ export const structuredSearchResultSchema = z.object({
 })
 
 /**
- * Structured representation of one LinkedIn person candidate returned by the
- * AI enrichment pass.
+ * Schema for the per-result LLM extraction of a LinkedIn person from a single
+ * Tavily result. The linkedinUrl is sourced directly from the Tavily result URL
+ * and is not extracted by the LLM.
  */
 export const structuredLinkedInPersonSchema = z.object({
-  name: z.string().min(1),
-  headline: z.string().min(1),
-  linkedinUrl: z.string().url(),
-  reason: z.string().min(1),
-  location: z.string().min(1).optional(),
+  name: z
+    .string()
+    .min(1)
+    .describe('The full name of the person only, e.g. "Jane Doe".')
+    .optional(),
+  headline: z
+    .string()
+    .min(1)
+    .describe(
+      'The professional headline or job title, e.g. "Senior Recruiter at Acme Corp".',
+    )
+    .optional(),
+  location: z
+    .string()
+    .min(1)
+    .describe('City, region, or country, e.g. "San Francisco, CA".')
+    .optional(),
 })
 
 /**
@@ -86,7 +99,9 @@ export type StructuredSearchJob = z.infer<typeof structuredSearchJobSchema>
 /**
  * TypeScript type for the full structured job-search response.
  */
-export type StructuredSearchResult = z.infer<typeof structuredSearchResultSchema>
+export type StructuredSearchResult = z.infer<
+  typeof structuredSearchResultSchema
+>
 
 /**
  * TypeScript type for one structured LinkedIn person candidate.

@@ -76,6 +76,8 @@ export const searchFailureStageValues = [
  * Allowed lifecycle states for the LinkedIn people lookup flow.
  */
 export const linkedinPeopleSearchStatusValues = [
+  'searching',
+  'enriching',
   'completed',
   'no_results',
 ] as const

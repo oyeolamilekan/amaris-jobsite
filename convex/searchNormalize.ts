@@ -4,6 +4,23 @@ import type { TavilySearchResult } from './searchTavily'
 
 const MAX_JOB_SUMMARY_LENGTH = 500
 
+/**
+ * Strips common markdown formatting so summaries display as plain text.
+ */
+function stripMarkdown(value: string) {
+  return value
+    .replace(/^#{1,6}\s+/gm, '')
+    .replace(/\*{1,2}([^*]+)\*{1,2}/g, '$1')
+    .replace(/_{1,2}([^_]+)_{1,2}/g, '$1')
+    .replace(/`([^`]+)`/g, '$1')
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    .replace(/^\s*[-*+]\s+/gm, '')
+    .replace(/^\s*\d+\.\s+/gm, '')
+    .replace(/\n+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
 function truncateText(value: string, maxLength: number) {
   if (value.length <= maxLength) {
     return value
@@ -85,10 +102,12 @@ export function tavilyResultsToJobs(
         extractCompanyFromTitle(result.title) ??
         sourceFromUrl(result.url)
       const summary =
-        extraction?.summary ??
-        truncateText(
-          result.content.replace(/\s+/g, ' ').trim(),
-          MAX_JOB_SUMMARY_LENGTH,
+        stripMarkdown(
+          extraction?.summary ??
+            truncateText(
+              result.content.replace(/\s+/g, ' ').trim(),
+              MAX_JOB_SUMMARY_LENGTH,
+            ),
         )
 
       return {

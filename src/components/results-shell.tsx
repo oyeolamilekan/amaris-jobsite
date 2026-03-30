@@ -10,6 +10,7 @@ import {
   ProviderFilter,
   allProviders,
 } from '~/components/provider-filter'
+import { ThemeToggle } from '~/components/theme-toggle'
 import { Badge } from '~/components/ui/badge'
 import { Button } from '~/components/ui/button'
 import {
@@ -173,6 +174,7 @@ export function ResultsShell({
           </Button>
 
           <div className="flex flex-wrap items-center gap-2">
+            <ThemeToggle />
             <Badge variant="outline">AI search</Badge>
 
             <Button asChild size="sm" variant="outline">

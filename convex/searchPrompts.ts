@@ -41,7 +41,7 @@ export const extractJobDetailsSystem = [
   'Fields to extract:',
   '- company: The hiring company name.',
   '- location: The job location (city, region, country). Use "Remote" when the listing explicitly says remote-only.',
-  '- summary: A concise 1-3 sentence summary of the role and key responsibilities.',
+  '- summary: A concise 1-3 sentence plain-text summary of the role and key responsibilities. No markdown, no bullet points, no headings.',
   '- source: The name of the ATS platform or job board (e.g. "Greenhouse", "Lever", "Notion").',
   '- category: One of: engineering, design, product, data, marketing, sales, operations, customer-success, finance, hr, other.',
   '- employmentType: One of: full-time, part-time, contract, internship, temporary, apprenticeship, unspecified.',
@@ -51,19 +51,6 @@ export const extractJobDetailsSystem = [
   '- Only extract data that is explicitly stated in the content.',
   '- Do not infer or guess values. When in doubt, return null.',
   '- For tags, prefer specific technologies and skills over generic terms.',
+  '- Never use "unspecified", "unknown", "n/a", or similar placeholder values as tags. Return an empty array instead.',
   '- Keep the summary factual and free of marketing language.',
-].join('\n')
-
-/**
- * System prompt for converting public LinkedIn-oriented web results into a
- * short list of useful employee/contact records.
- */
-export const structureLinkedInPeopleSystem = [
-  'You turn public web search results into a small set of LinkedIn people who likely work at the target company.',
-  '',
-  'Rules:',
-  '- Keep only likely current employees with LinkedIn profile URLs.',
-  '- Prioritize recruiters, hiring managers, founders, leaders, or people closely related to the target role when the evidence supports it.',
-  '- Ignore company pages, job posts, and people whose current company is unclear.',
-  '- Return an empty people array when there are no credible matches.',
 ].join('\n')

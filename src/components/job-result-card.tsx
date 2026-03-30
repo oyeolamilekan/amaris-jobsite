@@ -49,7 +49,9 @@ export function JobResultCard({
 
         <div className="flex flex-wrap gap-2">
           <Badge variant="outline">{formatLabel(job.category)}</Badge>
-          <Badge variant="outline">{formatLabel(job.workArrangement)}</Badge>
+          {job.workArrangement !== 'unspecified' ? (
+            <Badge variant="outline">{formatLabel(job.workArrangement)}</Badge>
+          ) : null}
 
           {job.tags.map((tag) => (
             <Badge key={tag} variant="outline">

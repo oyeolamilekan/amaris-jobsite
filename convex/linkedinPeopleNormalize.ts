@@ -1,5 +1,4 @@
 import { MAX_LINKEDIN_PEOPLE_RESULTS } from './searchConstants'
-import type { StructuredLinkedInPerson } from './searchSchemas'
 
 /**
  * Deduplicates and ranks structured LinkedIn people results before they are
@@ -8,34 +7,36 @@ import type { StructuredLinkedInPerson } from './searchSchemas'
  * @param people - Structured LinkedIn people candidates from the AI layer.
  * @returns Persistable LinkedIn people results with stable ranking.
  */
-export function normalizeLinkedInPeople(people: StructuredLinkedInPerson[]) {
+export function normalizeLinkedInPeople(
+  people: Array<{
+    name?: string
+    headline?: string
+    linkedinUrl: string
+    location?: string
+  }>,
+) {
   const seenUrls = new Set<string>()
 
   return people
     .filter((person) => {
-      if (seenUrls.has(person.linkedinUrl)) {
-        return false
-      }
-
+      if (seenUrls.has(person.linkedinUrl)) return false
       seenUrls.add(person.linkedinUrl)
       return true
     })
     .slice(0, MAX_LINKEDIN_PEOPLE_RESULTS)
     .map((person, index) => {
-      const normalizedPerson = {
-        rank: index + 1,
-        name: person.name.trim(),
-        headline: person.headline.trim(),
-        linkedinUrl: person.linkedinUrl,
-        reason: person.reason.trim(),
-      }
+      const normalizedPerson: {
+        rank: number
+        name?: string
+        headline?: string
+        linkedinUrl: string
+        location?: string
+      } = { rank: index + 1, linkedinUrl: person.linkedinUrl }
 
-      if (person.location?.trim()) {
-        return {
-          ...normalizedPerson,
-          location: person.location.trim(),
-        }
-      }
+      if (person.name) normalizedPerson.name = person.name.trim()
+      if (person.headline) normalizedPerson.headline = person.headline.trim()
+      if (person.location?.trim())
+        normalizedPerson.location = person.location.trim()
 
       return normalizedPerson
     })
