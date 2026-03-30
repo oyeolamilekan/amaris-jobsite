@@ -8,6 +8,7 @@ import * as React from 'react'
 import type { QueryClient } from '@tanstack/react-query'
 import appCss from '~/styles/app.css?url'
 import { ThemeProvider, themeInitScript } from '~/lib/theme'
+import { TooltipProvider } from '~/components/ui/tooltip'
 
 export const Route = createRootRouteWithContext<{
   queryClient: QueryClient
@@ -69,7 +70,9 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       </head>
       <body>
         <ThemeProvider>
-          {children}
+          <TooltipProvider>
+            {children}
+          </TooltipProvider>
         </ThemeProvider>
         <Scripts />
       </body>

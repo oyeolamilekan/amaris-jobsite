@@ -16,6 +16,13 @@ import {
   CardHeader,
   CardTitle,
 } from '~/components/ui/card'
+import { Separator } from '~/components/ui/separator'
+import {
+  SidebarInset,
+  SidebarProvider,
+  SidebarTrigger,
+} from '~/components/ui/sidebar'
+import { AdminSidebar } from '~/components/admin-sidebar'
 import { cn } from '~/lib/utils'
 
 export const Route = createFileRoute('/admin')({
@@ -279,6 +286,25 @@ function SearchRunCard({ entry }: { entry: AdminSearchEntry }) {
 }
 
 function AdminPage() {
+  return (
+    <SidebarProvider>
+      <AdminSidebar />
+      <SidebarInset>
+        <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
+          <SidebarTrigger className="-ml-1" />
+          <Separator
+            orientation="vertical"
+            className="mr-2 data-[orientation=vertical]:h-4"
+          />
+          <h1 className="text-sm font-medium">Search Runs</h1>
+        </header>
+        <AdminContent />
+      </SidebarInset>
+    </SidebarProvider>
+  )
+}
+
+function AdminContent() {
   const [pageIndex, setPageIndex] = useState(0)
   const [cursorHistory, setCursorHistory] = useState<Array<string | null>>([null])
   const currentCursor = cursorHistory[pageIndex] ?? null
@@ -327,110 +353,97 @@ function AdminPage() {
   }
 
   return (
-    <main className="min-h-screen bg-background px-4 py-6 text-foreground sm:px-6 lg:px-8">
-      <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <Button asChild variant="ghost">
-            <Link to="/">
-              <ArrowLeft data-icon="inline-start" />
-              Back home
-            </Link>
+    <div className="flex flex-1 flex-col gap-6 p-4 pt-0 sm:p-6 sm:pt-0">
+      <Card className="rounded-[1.75rem]">
+        <CardHeader>
+          <CardTitle className="text-3xl sm:text-4xl">
+            Search queries, saved results, and failure traces
+          </CardTitle>
+          <CardDescription>
+            Review one page of saved search runs at a time, the queries that
+            produced them, any failed traces saved for debugging, and the saved
+            jobs currently stored in Convex.
+          </CardDescription>
+        </CardHeader>
+
+        <CardContent className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <AdminStatCard
+            description="Search runs currently loaded on this page."
+            title={`${searches.length} searches`}
+          />
+          <AdminStatCard
+            description="Runs on this page that completed and produced a structured outcome."
+            title={`${completedSearches} completed`}
+          />
+          <AdminStatCard
+            description="Runs on this page that failed and now include saved trace context for debugging."
+            title={`${failedSearches} failed`}
+          />
+          <AdminStatCard
+            description="Saved jobs currently visible across this page of searches."
+            title={`${totalJobs} jobs`}
+          />
+        </CardContent>
+      </Card>
+
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-sm text-muted-foreground">
+          Page {pageIndex + 1}
+          {isFetching ? ' • Updating…' : ''}
+        </p>
+
+        <div className="flex gap-2">
+          <Button
+            disabled={isFirstPage || isFetching}
+            onClick={goToPreviousPage}
+            type="button"
+            variant="outline"
+          >
+            <ArrowLeft data-icon="inline-start" />
+            Previous
           </Button>
 
-          <Badge variant="outline">Admin view</Badge>
+          <Button
+            disabled={isLastPage || isFetching}
+            onClick={goToNextPage}
+            type="button"
+            variant="outline"
+          >
+            Next
+            <ArrowRight data-icon="inline-end" />
+          </Button>
         </div>
+      </div>
 
-        <Card className="rounded-[1.75rem]">
+      {isLoading && data === undefined ? (
+        <Card className="rounded-[1.5rem]">
           <CardHeader>
-            <CardTitle className="text-3xl sm:text-4xl">
-              Search queries, saved results, and failure traces
-            </CardTitle>
+            <CardTitle>Loading admin searches</CardTitle>
             <CardDescription>
-              Review one page of saved search runs at a time, the queries that
-              produced them, any failed traces saved for debugging, and the saved
-              jobs currently stored in Convex.
+              Fetching the next page of saved searches and results.
             </CardDescription>
           </CardHeader>
-
-          <CardContent className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
-            <AdminStatCard
-              description="Search runs currently loaded on this page."
-              title={`${searches.length} searches`}
-            />
-            <AdminStatCard
-              description="Runs on this page that completed and produced a structured outcome."
-              title={`${completedSearches} completed`}
-            />
-            <AdminStatCard
-              description="Runs on this page that failed and now include saved trace context for debugging."
-              title={`${failedSearches} failed`}
-            />
-            <AdminStatCard
-              description="Saved jobs currently visible across this page of searches."
-              title={`${totalJobs} jobs`}
-            />
-          </CardContent>
         </Card>
-
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="text-sm text-muted-foreground">
-            Page {pageIndex + 1}
-            {isFetching ? ' • Updating…' : ''}
-          </p>
-
-          <div className="flex gap-2">
-            <Button
-              disabled={isFirstPage || isFetching}
-              onClick={goToPreviousPage}
-              type="button"
-              variant="outline"
-            >
-              <ArrowLeft data-icon="inline-start" />
-              Previous
-            </Button>
-
-            <Button
-              disabled={isLastPage || isFetching}
-              onClick={goToNextPage}
-              type="button"
-              variant="outline"
-            >
-              Next
-              <ArrowRight data-icon="inline-end" />
-            </Button>
-          </div>
-        </div>
-
-        {isLoading && data === undefined ? (
-          <Card className="rounded-[1.5rem]">
-            <CardHeader>
-              <CardTitle>Loading admin searches</CardTitle>
-              <CardDescription>
-                Fetching the next page of saved searches and results.
-              </CardDescription>
-            </CardHeader>
-          </Card>
-        ) : searches.length === 0 ? (
-          <Card className="rounded-[1.5rem]">
-            <CardHeader>
-              <CardTitle>
-                {pageIndex === 0 ? 'No saved searches yet' : 'No more searches'}
-              </CardTitle>
-              <CardDescription>
-                {pageIndex === 0
-                  ? 'Run a search from the homepage to populate the admin view.'
-                  : 'There are no saved searches on this page.'}
-              </CardDescription>
-            </CardHeader>
-          </Card>
-        ) : (
+      ) : searches.length === 0 ? (
+        <Card className="rounded-[1.5rem]">
+          <CardHeader>
+            <CardTitle>
+              {pageIndex === 0 ? 'No saved searches yet' : 'No more searches'}
+            </CardTitle>
+            <CardDescription>
+              {pageIndex === 0
+                ? 'Run a search from the homepage to populate the admin view.'
+                : 'There are no saved searches on this page.'}
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      ) : (
           <div className="flex flex-col gap-4">
             {searches.map((entry) => (
               <SearchRunCard entry={entry} key={entry.search._id} />
             ))}
-          </div>
-        )}
-      </div>
-    </main>
+        </div>
+      )}
+    </div>
   )
 }

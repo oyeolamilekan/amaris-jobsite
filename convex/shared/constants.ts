@@ -48,8 +48,7 @@ export const searchProgressStageValues = [
 /**
  * TypeScript type for search progress stages.
  */
-export type SearchProgressStage =
-  (typeof searchProgressStageValues)[number]
+export type SearchProgressStage = (typeof searchProgressStageValues)[number]
 
 /**
  * Allowed lifecycle states for the top-level job search flow.

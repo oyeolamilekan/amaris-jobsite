@@ -8,26 +8,26 @@
  * @module
  */
 
-import type * as linkedinPeople from "../linkedinPeople.js";
-import type * as linkedinPeopleActions from "../linkedinPeopleActions.js";
-import type * as linkedinPeopleAi from "../linkedinPeopleAi.js";
-import type * as linkedinPeopleNormalize from "../linkedinPeopleNormalize.js";
-import type * as linkedinPeopleQueryBuilder from "../linkedinPeopleQueryBuilder.js";
-import type * as search from "../search.js";
-import type * as searchActions from "../searchActions.js";
-import type * as searchConstants from "../searchConstants.js";
-import type * as searchEnv from "../searchEnv.js";
-import type * as searchExtract from "../searchExtract.js";
-import type * as searchFacets from "../searchFacets.js";
-import type * as searchFailure from "../searchFailure.js";
-import type * as searchModel from "../searchModel.js";
-import type * as searchNormalize from "../searchNormalize.js";
-import type * as searchPipeline from "../searchPipeline.js";
-import type * as searchProgress from "../searchProgress.js";
-import type * as searchPrompts from "../searchPrompts.js";
-import type * as searchSchemas from "../searchSchemas.js";
-import type * as searchTavily from "../searchTavily.js";
-import type * as searchValidators from "../searchValidators.js";
+import type * as linkedin_actions from "../linkedin/actions.js";
+import type * as linkedin_normalize from "../linkedin/normalize.js";
+import type * as linkedin_parse from "../linkedin/parse.js";
+import type * as linkedin_queries from "../linkedin/queries.js";
+import type * as linkedin_queryBuilder from "../linkedin/queryBuilder.js";
+import type * as search_actions from "../search/actions.js";
+import type * as search_extract from "../search/extract.js";
+import type * as search_facets from "../search/facets.js";
+import type * as search_normalize from "../search/normalize.js";
+import type * as search_pipeline from "../search/pipeline.js";
+import type * as search_progress from "../search/progress.js";
+import type * as search_queries from "../search/queries.js";
+import type * as shared_constants from "../shared/constants.js";
+import type * as shared_env from "../shared/env.js";
+import type * as shared_failure from "../shared/failure.js";
+import type * as shared_model from "../shared/model.js";
+import type * as shared_prompts from "../shared/prompts.js";
+import type * as shared_schemas from "../shared/schemas.js";
+import type * as shared_tavily from "../shared/tavily.js";
+import type * as shared_validators from "../shared/validators.js";
 
 import type {
   ApiFromModules,
@@ -36,26 +36,26 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
-  linkedinPeople: typeof linkedinPeople;
-  linkedinPeopleActions: typeof linkedinPeopleActions;
-  linkedinPeopleAi: typeof linkedinPeopleAi;
-  linkedinPeopleNormalize: typeof linkedinPeopleNormalize;
-  linkedinPeopleQueryBuilder: typeof linkedinPeopleQueryBuilder;
-  search: typeof search;
-  searchActions: typeof searchActions;
-  searchConstants: typeof searchConstants;
-  searchEnv: typeof searchEnv;
-  searchExtract: typeof searchExtract;
-  searchFacets: typeof searchFacets;
-  searchFailure: typeof searchFailure;
-  searchModel: typeof searchModel;
-  searchNormalize: typeof searchNormalize;
-  searchPipeline: typeof searchPipeline;
-  searchProgress: typeof searchProgress;
-  searchPrompts: typeof searchPrompts;
-  searchSchemas: typeof searchSchemas;
-  searchTavily: typeof searchTavily;
-  searchValidators: typeof searchValidators;
+  "linkedin/actions": typeof linkedin_actions;
+  "linkedin/normalize": typeof linkedin_normalize;
+  "linkedin/parse": typeof linkedin_parse;
+  "linkedin/queries": typeof linkedin_queries;
+  "linkedin/queryBuilder": typeof linkedin_queryBuilder;
+  "search/actions": typeof search_actions;
+  "search/extract": typeof search_extract;
+  "search/facets": typeof search_facets;
+  "search/normalize": typeof search_normalize;
+  "search/pipeline": typeof search_pipeline;
+  "search/progress": typeof search_progress;
+  "search/queries": typeof search_queries;
+  "shared/constants": typeof shared_constants;
+  "shared/env": typeof shared_env;
+  "shared/failure": typeof shared_failure;
+  "shared/model": typeof shared_model;
+  "shared/prompts": typeof shared_prompts;
+  "shared/schemas": typeof shared_schemas;
+  "shared/tavily": typeof shared_tavily;
+  "shared/validators": typeof shared_validators;
 }>;
 
 /**
