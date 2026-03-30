@@ -7,7 +7,7 @@ import {
   MAX_SAVED_JOB_RESULTS,
   MAX_TAG_COUNT,
   workArrangementValues,
-} from './searchConstants'
+} from './constants'
 
 /**
  * Schema for the single AI call that classifies intent and generates a Tavily

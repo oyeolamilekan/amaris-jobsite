@@ -7,7 +7,7 @@ import {
   linkedinPeopleSearchStatusValues,
   searchStatusValues,
   workArrangementValues,
-} from './searchConstants'
+} from './constants'
 
 /**
  * Convex validator for search progress stage values.

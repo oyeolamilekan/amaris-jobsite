@@ -3,8 +3,8 @@ import {
   DEFAULT_TAVILY_SEARCH_DEPTH,
   MAX_TAVILY_QUERY_LENGTH,
   TAVILY_SEARCH_URL,
-} from './searchConstants'
-import { SearchStageError, serializeFailureDetails } from './searchFailure'
+} from './constants'
+import { SearchStageError, serializeFailureDetails } from './failure'
 
 /**
  * Raw subset of the Tavily API response used by this application.

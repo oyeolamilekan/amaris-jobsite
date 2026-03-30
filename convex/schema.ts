@@ -8,7 +8,7 @@ import {
   searchFailureTraceValidator,
   searchProgressStageValidator,
   searchStatusValidator,
-} from './searchValidators'
+} from './shared/validators'
 
 /**
  * Convex schema for persisted job-search runs, structured job results, and

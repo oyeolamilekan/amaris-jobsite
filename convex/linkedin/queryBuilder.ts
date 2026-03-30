@@ -1,7 +1,7 @@
 import {
   LINKEDIN_COMPANY_TERM_MAX_LENGTH,
   LINKEDIN_PEOPLE_PRIORITY_TERMS,
-} from './searchConstants'
+} from '../shared/constants'
 
 /**
  * Removes search operators and punctuation that would make a LinkedIn-focused

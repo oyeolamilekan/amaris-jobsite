@@ -1,18 +1,18 @@
 'use node'
 
 import { v } from 'convex/values'
-import { internal } from './_generated/api'
-import type { Id } from './_generated/dataModel'
-import { action } from './_generated/server'
+import { internal } from '../_generated/api'
+import type { Id } from '../_generated/dataModel'
+import { action } from '../_generated/server'
 import {
   DEFAULT_LINKEDIN_PEOPLE_MAX_RESULTS,
   DEFAULT_LINKEDIN_PEOPLE_SEARCH_DEPTH,
-} from './searchConstants'
-import { getSearchRuntimeConfig } from './searchEnv'
-import { structureLinkedInPeopleResults } from './linkedinPeopleAi'
-import { normalizeLinkedInPeople } from './linkedinPeopleNormalize'
-import { buildLinkedInPeopleSearchQuery } from './linkedinPeopleQueryBuilder'
-import { searchTavily } from './searchTavily'
+} from '../shared/constants'
+import { getSearchRuntimeConfig } from '../shared/env'
+import { structureLinkedInPeopleResults } from './parse'
+import { normalizeLinkedInPeople } from './normalize'
+import { buildLinkedInPeopleSearchQuery } from './queryBuilder'
+import { searchTavily } from '../shared/tavily'
 
 /**
  * Ensures a job result has a saved LinkedIn people lookup, reusing cached data
@@ -34,7 +34,7 @@ export const ensureLinkedInPeopleForJob = action({
     searchId: Id<'linkedinPeopleSearches'>
   }> => {
     const job = await ctx.runQuery(
-      internal.linkedinPeople.getLinkedInPeopleJobContextInternal,
+      internal.linkedin.queries.getLinkedInPeopleJobContextInternal,
       {
         jobResultId: args.jobResultId,
       },
@@ -50,7 +50,7 @@ export const ensureLinkedInPeopleForJob = action({
     })
 
     const searchId: Id<'linkedinPeopleSearches'> = await ctx.runMutation(
-      internal.linkedinPeople.saveLinkedInPeopleSearch,
+      internal.linkedin.queries.saveLinkedInPeopleSearch,
       {
         jobResultId: args.jobResultId,
         company: job.company,
@@ -69,7 +69,7 @@ export const ensureLinkedInPeopleForJob = action({
 
     if (tavilyResults.results.length === 0) {
       await ctx.runMutation(
-        internal.linkedinPeople.updateLinkedInPeopleSearchStatus,
+        internal.linkedin.queries.updateLinkedInPeopleSearchStatus,
         {
           searchId,
           status: 'no_results',
@@ -83,7 +83,7 @@ export const ensureLinkedInPeopleForJob = action({
     }
 
     await ctx.runMutation(
-      internal.linkedinPeople.updateLinkedInPeopleSearchStatus,
+      internal.linkedin.queries.updateLinkedInPeopleSearchStatus,
       {
         searchId,
         status: 'enriching',
@@ -94,7 +94,7 @@ export const ensureLinkedInPeopleForJob = action({
     const structuredResults = structureLinkedInPeopleResults(tavilyResults)
 
     const people = normalizeLinkedInPeople(structuredResults.people)
-    await ctx.runMutation(internal.linkedinPeople.saveLinkedInPeopleSearch, {
+    await ctx.runMutation(internal.linkedin.queries.saveLinkedInPeopleSearch, {
       jobResultId: args.jobResultId,
       company: job.company,
       jobTitle: job.title,

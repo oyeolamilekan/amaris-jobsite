@@ -99,13 +99,13 @@ export function SavedResultsPage({
   fallbackQuery,
 }: SavedResultsPageProps) {
   const { data } = useSuspenseQuery(
-    convexQuery(api.search.getSearchResultPage, {
+    convexQuery(api.search.queries.getSearchResultPage, {
       searchId,
     }),
   )
   const queryClient = useQueryClient()
   const ensureLinkedInPeopleForJob = useAction(
-    api.linkedinPeopleActions.ensureLinkedInPeopleForJob,
+    api.linkedin.actions.ensureLinkedInPeopleForJob,
   )
   const [activePeopleJob, setActivePeopleJob] =
     useState<LinkedInPeopleJob | null>(null)
@@ -130,7 +130,7 @@ export function SavedResultsPage({
       })
 
       const peopleQuery = convexQuery(
-        api.linkedinPeople.getLinkedInPeopleSearchForJob,
+        api.linkedin.queries.getLinkedInPeopleSearchForJob,
         {
           jobResultId: job._id,
         },

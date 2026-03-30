@@ -33,8 +33,8 @@ type ResultsSearchFormProps = {
 
 function ResultsSearchForm({ initialQuery }: ResultsSearchFormProps) {
   const navigate = useNavigate()
-  const initSearch = useMutation(api.searchProgress.initSearch)
-  const submitSearch = useAction(api.searchActions.submitSearch)
+  const initSearch = useMutation(api.search.progress.initSearch)
+  const submitSearch = useAction(api.search.actions.submitSearch)
   const normalizedInitialQuery = initialQuery.trim()
   const [query, setQuery] = useState(normalizedInitialQuery)
   const [loadingQuery, setLoadingQuery] = useState(normalizedInitialQuery)

@@ -1,15 +1,15 @@
-import { internal } from './_generated/api'
-import type { ActionCtx } from './_generated/server'
-import { getSearchRuntimeConfig } from './searchEnv'
+import { internal } from '../_generated/api'
+import type { ActionCtx } from '../_generated/server'
+import { getSearchRuntimeConfig } from '../shared/env'
 import {
   FAILED_SEARCH_SUMMARY,
   toFailureTrace,
   type SearchFailureStage,
-} from './searchFailure'
-import { generateSearchQuery } from './searchFacets'
-import { tavilyResultsToJobs } from './searchNormalize'
-import { extractAllJobDetails } from './searchExtract'
-import { searchTavilyJobs } from './searchTavily'
+} from '../shared/failure'
+import { generateSearchQuery } from './facets'
+import { tavilyResultsToJobs } from './normalize'
+import { extractAllJobDetails } from './extract'
+import { searchTavilyJobs } from '../shared/tavily'
 
 /**
  * Classifies the prompt and generates a Tavily query via a single LLM call.
@@ -70,7 +70,7 @@ export async function persistFailedSearch(
   )
 
   try {
-    await ctx.runMutation(internal.search.saveSearchOutcome, {
+    await ctx.runMutation(internal.search.queries.saveSearchOutcome, {
       prompt: opts.prompt,
       isJobSearch: opts.isJobSearch,
       status: 'failed' as const,

@@ -1,6 +1,6 @@
-import { MAX_SAVED_JOB_RESULTS } from './searchConstants'
-import type { JobExtraction } from './searchSchemas'
-import type { TavilySearchResult } from './searchTavily'
+import { MAX_SAVED_JOB_RESULTS } from '../shared/constants'
+import type { JobExtraction } from '../shared/schemas'
+import type { TavilySearchResult } from '../shared/tavily'
 
 const MAX_JOB_SUMMARY_LENGTH = 500
 

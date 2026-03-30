@@ -1,5 +1,5 @@
-import type { StructuredLinkedInPerson } from './searchSchemas'
-import type { TavilySearchResult } from './searchTavily'
+import type { StructuredLinkedInPerson } from '../shared/schemas'
+import type { TavilySearchResult } from '../shared/tavily'
 
 const LINKEDIN_TITLE_SUFFIX = /\s*[\|–—-]\s*LinkedIn\s*$/i
 const TITLE_SEPARATOR = /\s*[\|–—-]\s*/

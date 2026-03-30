@@ -1,4 +1,4 @@
-import { MAX_LINKEDIN_PEOPLE_RESULTS } from './searchConstants'
+import { MAX_LINKEDIN_PEOPLE_RESULTS } from '../shared/constants'
 
 /**
  * Deduplicates and ranks structured LinkedIn people results before they are

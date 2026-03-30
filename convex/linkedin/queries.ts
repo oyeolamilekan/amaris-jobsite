@@ -1,9 +1,9 @@
 import { v } from 'convex/values'
-import { internalMutation, internalQuery, query } from './_generated/server'
+import { internalMutation, internalQuery, query } from '../_generated/server'
 import {
   linkedinPeopleSearchStatusValidator,
   savedLinkedInPersonValidator,
-} from './searchValidators'
+} from '../shared/validators'
 
 /**
  * Internal lookup used by actions to check whether a job already has a cached

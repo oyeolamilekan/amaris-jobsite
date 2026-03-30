@@ -1,4 +1,4 @@
-import { searchFailureStageValues } from './searchConstants'
+import { searchFailureStageValues } from './constants'
 
 const MAX_FAILURE_RESPONSE_LENGTH = 8_000
 const MAX_FAILURE_DETAILS_LENGTH = 12_000

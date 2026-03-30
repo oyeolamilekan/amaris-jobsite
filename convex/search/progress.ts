@@ -1,6 +1,6 @@
 import { v } from 'convex/values'
-import { internalMutation, mutation, query } from './_generated/server'
-import { searchProgressStageValidator } from './searchValidators'
+import { internalMutation, mutation, query } from '../_generated/server'
+import { searchProgressStageValidator } from '../shared/validators'
 
 /**
  * Creates a progress record for a new search. Called by the frontend before

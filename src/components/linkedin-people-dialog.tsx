@@ -71,7 +71,7 @@ function LinkedInPeopleDialogContent({
   onOpenChange: (open: boolean) => void
 }) {
   const { data, isLoading: isQueryLoading } = useQuery(
-    convexQuery(api.linkedinPeople.getLinkedInPeopleSearchForJob, {
+    convexQuery(api.linkedin.queries.getLinkedInPeopleSearchForJob, {
       jobResultId: job._id,
     }),
   )

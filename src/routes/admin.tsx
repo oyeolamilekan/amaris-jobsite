@@ -283,7 +283,7 @@ function AdminPage() {
   const [cursorHistory, setCursorHistory] = useState<Array<string | null>>([null])
   const currentCursor = cursorHistory[pageIndex] ?? null
   const { data, isLoading, isFetching } = useQuery(
-    convexQuery(api.search.getAdminSearchRuns, {
+    convexQuery(api.search.queries.getAdminSearchRuns, {
       paginationOpts: {
         cursor: currentCursor,
         numItems: ADMIN_PAGE_SIZE,

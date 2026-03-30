@@ -1,20 +1,20 @@
 'use node'
 
 import { v } from 'convex/values'
-import { internal } from './_generated/api'
-import type { Id } from './_generated/dataModel'
-import { action } from './_generated/server'
+import { internal } from '../_generated/api'
+import type { Id } from '../_generated/dataModel'
+import { action } from '../_generated/server'
 import {
   NOT_JOB_SEARCH_SUMMARY,
   SearchStageError,
   type SearchFailureStage,
-} from './searchFailure'
+} from '../shared/failure'
 import {
   classifyAndBuildQuery,
   persistFailedSearch,
   runJobSearchPipeline,
-} from './searchPipeline'
-import type { SearchProgressStage } from './searchConstants'
+} from './pipeline'
+import type { SearchProgressStage } from '../shared/constants'
 
 /**
  * Main action entrypoint for a user-submitted search. Classifies the prompt
@@ -38,7 +38,7 @@ export const submitSearch = action({
       extra?: { searchId?: Id<'searchRuns'>; error?: string },
     ) {
       if (!progressId) return
-      await ctx.runMutation(internal.searchProgress.updateSearchProgress, {
+      await ctx.runMutation(internal.search.progress.updateSearchProgress, {
         progressId,
         stage,
         ...extra,
@@ -58,7 +58,7 @@ export const submitSearch = action({
         stage = 'search-persistence'
         await reportProgress('saving')
         const searchId = await ctx.runMutation(
-          internal.search.saveSearchOutcome,
+          internal.search.queries.saveSearchOutcome,
           {
             prompt,
             isJobSearch: false,
@@ -84,7 +84,7 @@ export const submitSearch = action({
       stage = 'search-persistence'
       await reportProgress('saving')
       const searchId = await ctx.runMutation(
-        internal.search.saveSearchOutcome,
+        internal.search.queries.saveSearchOutcome,
         {
           prompt,
           isJobSearch: true,

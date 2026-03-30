@@ -7,11 +7,11 @@ import {
 import {
   approvedJobHostFamilies,
   approvedJobSearchHosts,
-} from './searchConstants'
-import { SearchStageError, serializeFailureDetails } from './searchFailure'
-import { getJobSearchModel } from './searchModel'
-import { generateSearchQuerySystem } from './searchPrompts'
-import { searchQuerySchema } from './searchSchemas'
+} from '../shared/constants'
+import { SearchStageError, serializeFailureDetails } from '../shared/failure'
+import { getJobSearchModel } from '../shared/model'
+import { generateSearchQuerySystem } from '../shared/prompts'
+import { searchQuerySchema } from '../shared/schemas'
 
 /**
  * Builds the site clause from either the selected providers or the full host

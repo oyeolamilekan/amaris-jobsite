@@ -4,10 +4,10 @@ import {
   Output,
   generateText,
 } from 'ai'
-import { getJobSearchModel } from './searchModel'
-import { extractJobDetailsSystem } from './searchPrompts'
-import { jobExtractionSchema, type JobExtraction } from './searchSchemas'
-import type { TavilySearchResult } from './searchTavily'
+import { getJobSearchModel } from '../shared/model'
+import { extractJobDetailsSystem } from '../shared/prompts'
+import { jobExtractionSchema, type JobExtraction } from '../shared/schemas'
+import type { TavilySearchResult } from '../shared/tavily'
 
 const MAX_RAW_CONTENT_LENGTH = 12_000
 
@@ -23,21 +23,6 @@ const NULL_EXTRACTION: JobExtraction = {
   category: null,
   employmentType: null,
   tags: null,
-}
-
-/**
- * Truncates raw content to a reasonable length for LLM input while preserving
- * word boundaries.
- */
-function truncateForExtraction(text: string) {
-  if (text.length <= MAX_RAW_CONTENT_LENGTH) return text
-  const truncated = text.slice(0, MAX_RAW_CONTENT_LENGTH + 1)
-  const lastSpace = truncated.lastIndexOf(' ')
-  const cutoff =
-    lastSpace > Math.floor(MAX_RAW_CONTENT_LENGTH * 0.8)
-      ? lastSpace
-      : MAX_RAW_CONTENT_LENGTH
-  return `${truncated.slice(0, cutoff).trimEnd()}...`
 }
 
 type TavilySingleResult = TavilySearchResult['results'][number]

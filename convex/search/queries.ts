@@ -1,18 +1,18 @@
 import { paginationOptsValidator } from 'convex/server'
 import { v } from 'convex/values'
-import type { Id } from './_generated/dataModel'
-import type { QueryCtx } from './_generated/server'
-import { internalMutation, query } from './_generated/server'
+import type { Id } from '../_generated/dataModel'
+import type { QueryCtx } from '../_generated/server'
+import { internalMutation, query } from '../_generated/server'
 import {
   DEFAULT_ADMIN_SEARCH_LIMIT,
   MAX_ADMIN_SEARCH_LIMIT,
   MAX_SAVED_JOB_RESULTS,
-} from './searchConstants'
+} from '../shared/constants'
 import {
   savedJobValidator,
   searchFailureTraceValidator,
   searchStatusValidator,
-} from './searchValidators'
+} from '../shared/validators'
 
 /**
  * Loads the saved jobs for a single search run using the rank index.

@@ -3,7 +3,7 @@ import { ChevronDown } from 'lucide-react'
 import {
   approvedJobHostFamilies,
   providerLabels,
-} from '../../convex/searchConstants'
+} from '../../convex/shared/constants'
 import { Badge } from '~/components/ui/badge'
 import { Button } from '~/components/ui/button'
 import { Checkbox } from '~/components/ui/checkbox'

@@ -1,90 +1,51 @@
-# Welcome to your Convex functions directory!
+# Convex Backend
 
-Write your Convex functions here.
-See https://docs.convex.dev/functions for more.
+Backend functions for the job search application, organized by domain.
 
-A query function that takes two arguments looks like:
+## Folder structure
 
-```ts
-// convex/myFunctions.ts
-import { query } from "./_generated/server";
-import { v } from "convex/values";
-
-export const myQueryFunction = query({
-  // Validators for arguments.
-  args: {
-    first: v.number(),
-    second: v.string(),
-  },
-
-  // Function implementation.
-  handler: async (ctx, args) => {
-    // Read the database as many times as you need here.
-    // See https://docs.convex.dev/database/reading-data.
-    const documents = await ctx.db.query("tablename").collect();
-
-    // Arguments passed from the client are properties of the args object.
-    console.log(args.first, args.second);
-
-    // Write arbitrary JavaScript here: filter, aggregate, build derived data,
-    // remove non-public properties, or create new objects.
-    return documents;
-  },
-});
+```
+convex/
+├── _generated/          # Auto-generated (do NOT edit)
+├── schema.ts            # Database schema definition
+├── shared/              # Cross-feature utilities
+│   ├── constants.ts     # Enums, limits, status values
+│   ├── env.ts           # Runtime config (API keys, feature flags)
+│   ├── model.ts         # AI model initialization
+│   ├── prompts.ts       # LLM system prompts
+│   ├── schemas.ts       # Zod schemas for AI structured output
+│   ├── validators.ts    # Convex argument/return validators
+│   ├── failure.ts       # Error handling utilities
+│   └── tavily.ts        # Tavily search API client
+├── search/              # Job search feature
+│   ├── actions.ts       # Public action: submitSearch
+│   ├── pipeline.ts      # Search orchestration pipeline
+│   ├── facets.ts        # AI-powered search query generation
+│   ├── extract.ts       # Job detail extraction from search results
+│   ├── normalize.ts     # Result normalization and deduplication
+│   ├── queries.ts       # DB queries and mutations for search results
+│   └── progress.ts      # Real-time search progress tracking
+└── linkedin/            # LinkedIn people search feature
+    ├── actions.ts       # Public action: ensureLinkedInPeopleForJob
+    ├── parse.ts         # Deterministic LinkedIn title parsing
+    ├── normalize.ts     # People result normalization
+    ├── queryBuilder.ts  # Tavily query construction for LinkedIn
+    └── queries.ts       # DB queries and mutations for people searches
 ```
 
-Using this query function in a React component looks like:
+## API routing
 
-```ts
-const data = useQuery(api.myFunctions.myQueryFunction, {
-  first: 10,
-  second: "hello",
-});
-```
+Convex maps file paths to API references:
+- `convex/search/actions.ts` → `api.search.actions.submitSearch`
+- `convex/search/progress.ts` → `api.search.progress.getSearchProgress`
+- `convex/search/queries.ts` → `api.search.queries.getSearchResultPage`
+- `convex/linkedin/actions.ts` → `api.linkedin.actions.ensureLinkedInPeopleForJob`
+- `convex/linkedin/queries.ts` → `api.linkedin.queries.getLinkedInPeopleSearchForJob`
 
-A mutation function looks like:
+## Key patterns
 
-```ts
-// convex/myFunctions.ts
-import { mutation } from "./_generated/server";
-import { v } from "convex/values";
-
-export const myMutationFunction = mutation({
-  // Validators for arguments.
-  args: {
-    first: v.string(),
-    second: v.string(),
-  },
-
-  // Function implementation.
-  handler: async (ctx, args) => {
-    // Insert or modify documents in the database here.
-    // Mutations can also read from the database like queries.
-    // See https://docs.convex.dev/database/writing-data.
-    const message = { body: args.first, author: args.second };
-    const id = await ctx.db.insert("messages", message);
-
-    // Optionally, return a value from your mutation.
-    return await ctx.db.get("messages", id);
-  },
-});
-```
-
-Using this mutation function in a React component looks like:
-
-```ts
-const mutation = useMutation(api.myFunctions.myMutationFunction);
-function handleButtonPress() {
-  // fire and forget, the most common way to use mutations
-  mutation({ first: "Hello!", second: "me" });
-  // OR
-  // use the result once the mutation has completed
-  mutation({ first: "Hello!", second: "me" }).then((result) =>
-    console.log(result),
-  );
-}
-```
-
-Use the Convex CLI to push your functions to a deployment. See everything
-the Convex CLI can do by running `npx convex -h` in your project root
-directory. To learn more, launch the docs with `npx convex docs`.
+- **Queries/mutations** use validators from `shared/validators.ts`
+- **Actions** orchestrate external API calls (Tavily, OpenAI) and call internal mutations to save results
+- **Progress tracking** uses Convex's real-time subscriptions for live UI updates
+- Read data on the frontend with `useSuspenseQuery(convexQuery(api.search.queries.*, args))`
+- Write data with `useMutation(api.search.progress.initSearch)` or `useAction(api.search.actions.submitSearch)`

@@ -1,5 +1,5 @@
 import { gateway } from 'ai'
-import { JOB_SEARCH_MODEL } from './searchConstants'
+import { JOB_SEARCH_MODEL } from './constants'
 
 /**
  * Returns the shared AI Gateway model handle used by the app's enrichment
