@@ -6,10 +6,7 @@ import { ChevronLeft, Search } from 'lucide-react'
 import { api } from '../../convex/_generated/api'
 import type { Id } from '../../convex/_generated/dataModel'
 import { SearchLoadingScreen } from '~/components/search-loading-screen'
-import {
-  ProviderFilter,
-  allProviders,
-} from '~/components/provider-filter'
+import { ProviderFilter, allProviders } from '~/components/provider-filter'
 import { ThemeToggle } from '~/components/theme-toggle'
 import { Badge } from '~/components/ui/badge'
 import { Button } from '~/components/ui/button'
@@ -176,10 +173,6 @@ export function ResultsShell({
           <div className="flex flex-wrap items-center gap-2">
             <ThemeToggle />
             <Badge variant="outline">AI search</Badge>
-
-            <Button asChild size="sm" variant="outline">
-              <Link to="/admin">Admin view</Link>
-            </Button>
           </div>
         </div>
 
