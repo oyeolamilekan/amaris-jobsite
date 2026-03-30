@@ -1,8 +1,9 @@
-import { Link, useRouterState } from '@tanstack/react-router'
+import { Link, useSearch } from '@tanstack/react-router'
 import {
   Home,
   LayoutDashboard,
   Search,
+  Settings,
   Users,
 } from 'lucide-react'
 import {
@@ -22,19 +23,29 @@ import {
 const navItems = [
   {
     title: 'Search Runs',
-    url: '/admin',
+    view: 'searches',
     icon: Search,
   },
   {
     title: 'LinkedIn Searches',
-    url: '/admin/linkedin',
+    view: 'linkedin',
     icon: Users,
+  },
+  {
+    title: 'Settings',
+    view: 'settings',
+    icon: Settings,
   },
 ]
 
 export function AdminSidebar() {
-  const routerState = useRouterState()
-  const currentPath = routerState.location.pathname
+  let currentView = 'searches'
+  try {
+    const search = useSearch({ from: '/admin' })
+    currentView = search.view ?? 'searches'
+  } catch {
+    // fallback when not inside the admin route
+  }
 
   return (
     <Sidebar collapsible="icon">
@@ -42,7 +53,7 @@ export function AdminSidebar() {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
-              <Link to="/admin">
+              <Link to="/admin" search={{ view: 'searches' }}>
                 <div className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
                   <LayoutDashboard className="size-4" />
                 </div>
@@ -67,9 +78,9 @@ export function AdminSidebar() {
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
                     asChild
-                    isActive={currentPath === item.url}
+                    isActive={currentView === item.view}
                   >
-                    <Link to={item.url}>
+                    <Link to="/admin" search={{ view: item.view }}>
                       <item.icon />
                       <span>{item.title}</span>
                     </Link>

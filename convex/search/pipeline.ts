@@ -18,20 +18,24 @@ import { searchTavilyJobs } from '../shared/tavily'
 export async function classifyAndBuildQuery(
   prompt: string,
   selectedProviders?: string[],
+  modelId?: string,
 ) {
-  return generateSearchQuery(prompt, selectedProviders)
+  return generateSearchQuery(prompt, selectedProviders, modelId)
 }
 
 /**
  * Runs the core search pipeline: Tavily retrieval → direct mapping to jobs.
  * Returns everything needed to persist a completed search.
  */
-export async function runJobSearchPipeline(tavilyQuery: string) {
+export async function runJobSearchPipeline(
+  tavilyQuery: string,
+  modelId?: string,
+) {
   const { tavilyApiKey } = getSearchRuntimeConfig()
 
   const tavilyResults = await searchTavilyJobs(tavilyApiKey, tavilyQuery)
 
-  const extractions = await extractAllJobDetails(tavilyResults.results)
+  const extractions = await extractAllJobDetails(tavilyResults.results, modelId)
 
   const jobs = tavilyResultsToJobs(tavilyResults.results, extractions)
 

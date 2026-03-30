@@ -1,10 +1,12 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { convexQuery } from '@convex-dev/react-query'
-import { Link, createFileRoute } from '@tanstack/react-router'
+import { Link, createFileRoute, useSearch } from '@tanstack/react-router'
+import { useMutation as useConvexMutation } from 'convex/react'
 import type { Doc } from '../../convex/_generated/dataModel'
 import { api } from '../../convex/_generated/api'
-import { ArrowLeft, ArrowRight, ArrowUpRight } from 'lucide-react'
+import { AVAILABLE_AI_MODELS } from '../../convex/admin/settings'
+import { ArrowLeft, ArrowRight, ArrowUpRight, Check } from 'lucide-react'
 import { Badge } from '~/components/ui/badge'
 import { Button } from '~/components/ui/button'
 import {
@@ -27,6 +29,9 @@ import { cn } from '~/lib/utils'
 
 export const Route = createFileRoute('/admin')({
   component: AdminPage,
+  validateSearch: (search: Record<string, unknown>) => ({
+    view: (search.view as string) ?? 'searches',
+  }),
 })
 
 const ADMIN_PAGE_SIZE = 25
@@ -285,7 +290,15 @@ function SearchRunCard({ entry }: { entry: AdminSearchEntry }) {
   )
 }
 
+const VIEW_TITLES: Record<string, string> = {
+  searches: 'Search Runs',
+  settings: 'Settings',
+}
+
 function AdminPage() {
+  const { view } = useSearch({ from: '/admin' })
+  const title = VIEW_TITLES[view] ?? 'Admin'
+
   return (
     <SidebarProvider>
       <AdminSidebar />
@@ -296,11 +309,118 @@ function AdminPage() {
             orientation="vertical"
             className="mr-2 data-[orientation=vertical]:h-4"
           />
-          <h1 className="text-sm font-medium">Search Runs</h1>
+          <h1 className="text-sm font-medium">{title}</h1>
         </header>
-        <AdminContent />
+        {view === 'settings' ? <SettingsContent /> : <AdminContent />}
       </SidebarInset>
     </SidebarProvider>
+  )
+}
+
+function SettingsContent() {
+  const { data: settings } = useQuery(
+    convexQuery(api.admin.settings.getSettings, {}),
+  )
+  const updateAiModel = useConvexMutation(api.admin.settings.updateAiModel)
+  const [selectedModel, setSelectedModel] = useState<string | null>(null)
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
+
+  const currentModel = settings?.aiModel ?? ''
+  const activeModel = selectedModel ?? currentModel
+
+  async function handleSave() {
+    if (!selectedModel || selectedModel === currentModel) return
+    setSaving(true)
+    setSaved(false)
+    try {
+      await updateAiModel({ aiModel: selectedModel })
+      setSaved(true)
+      setSelectedModel(null)
+      setTimeout(() => setSaved(false), 2000)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const groupedModels = AVAILABLE_AI_MODELS.reduce(
+    (acc, model) => {
+      if (!acc[model.provider]) acc[model.provider] = []
+      acc[model.provider].push(model)
+      return acc
+    },
+    {} as Record<string, typeof AVAILABLE_AI_MODELS[number][]>,
+  )
+
+  return (
+    <div className="flex flex-1 flex-col gap-6 p-4 pt-4 sm:p-6">
+      <Card className="rounded-[1.75rem]">
+        <CardHeader>
+          <CardTitle>AI Model</CardTitle>
+          <CardDescription>
+            Choose the AI model used for job classification and extraction.
+            Changes apply to all future searches.
+          </CardDescription>
+        </CardHeader>
+
+        <CardContent className="flex flex-col gap-4">
+          {Object.entries(groupedModels).map(([provider, models]) => (
+            <div key={provider} className="flex flex-col gap-2">
+              <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">
+                {provider}
+              </p>
+              <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                {models.map((model) => {
+                  const isActive = activeModel === model.id
+                  return (
+                    <button
+                      key={model.id}
+                      type="button"
+                      onClick={() => setSelectedModel(model.id)}
+                      className={cn(
+                        'flex items-center gap-3 rounded-xl border p-4 text-left transition-colors',
+                        isActive
+                          ? 'border-primary bg-primary/5'
+                          : 'border-border/60 bg-muted/20 hover:border-border',
+                      )}
+                    >
+                      <div className="flex-1">
+                        <p className="text-sm font-medium">{model.label}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {model.id}
+                        </p>
+                      </div>
+                      {isActive && (
+                        <Check className="size-4 shrink-0 text-primary" />
+                      )}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          ))}
+        </CardContent>
+
+        <CardFooter className="flex items-center justify-between gap-3">
+          <p className="text-sm text-muted-foreground">
+            {saved
+              ? 'Model updated successfully.'
+              : settings?.updatedAt
+                ? `Last updated ${formatDateTime(settings.updatedAt)}`
+                : 'Using default model.'}
+          </p>
+          <Button
+            disabled={
+              saving || !selectedModel || selectedModel === currentModel
+            }
+            onClick={handleSave}
+            size="sm"
+          >
+            {saving ? 'Saving…' : 'Save changes'}
+          </Button>
+        </CardFooter>
+      </Card>
+    </div>
   )
 }
 

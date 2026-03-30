@@ -72,4 +72,11 @@ export default defineSchema({
   })
     .index('by_jobResultId', ['jobResultId'])
     .index('by_createdAt', ['createdAt']),
+  /**
+   * Singleton admin settings document for runtime configuration.
+   */
+  adminSettings: defineTable({
+    aiModel: v.string(),
+    updatedAt: v.number(),
+  }),
 })

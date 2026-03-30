@@ -8,6 +8,7 @@
  * @module
  */
 
+import type * as admin_settings from "../admin/settings.js";
 import type * as linkedin_actions from "../linkedin/actions.js";
 import type * as linkedin_normalize from "../linkedin/normalize.js";
 import type * as linkedin_parse from "../linkedin/parse.js";
@@ -36,6 +37,7 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  "admin/settings": typeof admin_settings;
   "linkedin/actions": typeof linkedin_actions;
   "linkedin/normalize": typeof linkedin_normalize;
   "linkedin/parse": typeof linkedin_parse;

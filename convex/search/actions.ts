@@ -50,8 +50,19 @@ export const submitSearch = action({
     let tavilyQuery: string | undefined
 
     try {
+      // 0. Read admin AI model setting
+      const settings = await ctx.runQuery(
+        internal.admin.settings.getSettingsInternal,
+        {},
+      )
+      const modelId = settings.aiModel
+
       // 1. Classify intent + generate Tavily query (single LLM call)
-      const result = await classifyAndBuildQuery(prompt, selectedProviders)
+      const result = await classifyAndBuildQuery(
+        prompt,
+        selectedProviders,
+        modelId,
+      )
 
       // 2. Non-job-search early exit
       if (result.intent !== 'job_search') {
@@ -78,7 +89,7 @@ export const submitSearch = action({
       tavilyQuery = result.query
       stage = 'tavily-search'
       await reportProgress('searching')
-      const pipeline = await runJobSearchPipeline(tavilyQuery)
+      const pipeline = await runJobSearchPipeline(tavilyQuery, modelId)
 
       // 4. Persist completed results
       stage = 'search-persistence'

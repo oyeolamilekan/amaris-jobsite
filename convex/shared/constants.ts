@@ -248,6 +248,11 @@ export const approvedJobHostFamilies = [
     queryHost: 'notion.site',
     hosts: ['notion.site'],
   },
+  {
+    provider: 'join',
+    queryHost: 'join.com',
+    hosts: ['join.com'],
+  },
 ] satisfies readonly ApprovedJobHostFamily[]
 
 /**

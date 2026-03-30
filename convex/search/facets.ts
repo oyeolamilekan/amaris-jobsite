@@ -49,12 +49,13 @@ function normalizeIntent(value: string) {
 export async function generateSearchQuery(
   prompt: string,
   selectedProviders?: string[],
+  modelId?: string,
 ) {
   const siteClause = buildSiteClause(selectedProviders)
 
   try {
     const { output } = await generateText({
-      model: getJobSearchModel(),
+      model: getJobSearchModel(modelId),
       maxOutputTokens: 2048,
       system: generateSearchQuerySystem,
       prompt: [

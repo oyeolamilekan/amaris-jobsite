@@ -34,12 +34,13 @@ type TavilySingleResult = TavilySearchResult['results'][number]
  */
 export async function extractJobDetails(
   result: TavilySingleResult,
+  modelId?: string,
 ): Promise<JobExtraction> {
   const content = result.rawContent ?? result.content
 
   try {
     const { output } = await generateText({
-      model: getJobSearchModel(),
+      model: getJobSearchModel(modelId),
       maxOutputTokens: 1024,
       system: extractJobDetailsSystem,
       prompt: [
@@ -81,9 +82,10 @@ export async function extractJobDetails(
  */
 export async function extractAllJobDetails(
   results: TavilySearchResult['results'],
+  modelId?: string,
 ): Promise<JobExtraction[]> {
   const settled = await Promise.allSettled(
-    results.map((result) => extractJobDetails(result)),
+    results.map((result) => extractJobDetails(result, modelId)),
   )
 
   return settled.map((outcome) =>
