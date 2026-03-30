@@ -6,7 +6,7 @@ import { useMutation as useConvexMutation } from 'convex/react'
 import type { Doc } from '../../convex/_generated/dataModel'
 import { api } from '../../convex/_generated/api'
 import { AVAILABLE_AI_MODELS } from '../../convex/admin/settings'
-import { ArrowLeft, ArrowRight, ArrowUpRight, Check } from 'lucide-react'
+import { ArrowLeft, ArrowRight, ArrowUpRight } from 'lucide-react'
 import { Badge } from '~/components/ui/badge'
 import { Button } from '~/components/ui/button'
 import {
@@ -18,6 +18,15 @@ import {
   CardHeader,
   CardTitle,
 } from '~/components/ui/card'
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from '~/components/ui/select'
 import { Separator } from '~/components/ui/separator'
 import {
   SidebarInset,
@@ -363,42 +372,24 @@ function SettingsContent() {
           </CardDescription>
         </CardHeader>
 
-        <CardContent className="flex flex-col gap-4">
-          {Object.entries(groupedModels).map(([provider, models]) => (
-            <div key={provider} className="flex flex-col gap-2">
-              <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">
-                {provider}
-              </p>
-              <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                {models.map((model) => {
-                  const isActive = activeModel === model.id
-                  return (
-                    <button
-                      key={model.id}
-                      type="button"
-                      onClick={() => setSelectedModel(model.id)}
-                      className={cn(
-                        'flex items-center gap-3 rounded-xl border p-4 text-left transition-colors',
-                        isActive
-                          ? 'border-primary bg-primary/5'
-                          : 'border-border/60 bg-muted/20 hover:border-border',
-                      )}
-                    >
-                      <div className="flex-1">
-                        <p className="text-sm font-medium">{model.label}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {model.id}
-                        </p>
-                      </div>
-                      {isActive && (
-                        <Check className="size-4 shrink-0 text-primary" />
-                      )}
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-          ))}
+        <CardContent>
+          <Select value={activeModel} onValueChange={setSelectedModel}>
+            <SelectTrigger className="w-full sm:w-80">
+              <SelectValue placeholder="Select a model" />
+            </SelectTrigger>
+            <SelectContent>
+              {Object.entries(groupedModels).map(([provider, models]) => (
+                <SelectGroup key={provider}>
+                  <SelectLabel>{provider}</SelectLabel>
+                  {models.map((model) => (
+                    <SelectItem key={model.id} value={model.id}>
+                      {model.label}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              ))}
+            </SelectContent>
+          </Select>
         </CardContent>
 
         <CardFooter className="flex items-center justify-between gap-3">
