@@ -36,9 +36,6 @@ export const createAuthOptions = (ctx: GenericCtx<DataModel>) => {
   } satisfies BetterAuthOptions
 }
 
-// For `auth` CLI
-export const options = createAuthOptions({} as GenericCtx<DataModel>)
-
 export const createAuth = (ctx: GenericCtx<DataModel>) => {
   return betterAuth(createAuthOptions(ctx))
 }

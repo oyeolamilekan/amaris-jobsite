@@ -1,7 +1,8 @@
 import { createApi } from '@convex-dev/better-auth'
-import { createAuthOptions } from './auth'
 import schema from './schema'
 
+// Minimal options factory for the adapter — only needs schema structure,
+// not runtime env vars. Env vars are only needed at request time in auth.ts.
 export const {
   create,
   findOne,
@@ -10,4 +11,11 @@ export const {
   updateMany,
   deleteOne,
   deleteMany,
-} = createApi(schema, createAuthOptions)
+} = createApi(schema, () => ({
+  socialProviders: {
+    google: {
+      clientId: '',
+      clientSecret: '',
+    },
+  },
+}))
