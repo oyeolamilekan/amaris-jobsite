@@ -139,6 +139,7 @@ function HomePage() {
           <Textarea
             className="min-h-28 resize-none rounded-2xl px-4 py-3 text-base"
             disabled={isSubmitting}
+            maxLength={200}
             onChange={(event) => {
               setQuery(event.target.value)
               if (submitError) setSubmitError(null)

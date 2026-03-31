@@ -107,6 +107,7 @@ function ResultsSearchForm({ initialQuery }: ResultsSearchFormProps) {
               <Input
                 className="h-11 rounded-full px-4"
                 id="results-query"
+                maxLength={200}
                 name="q"
                 onChange={(event) => {
                   setQuery(event.target.value)
