@@ -13,6 +13,7 @@ import {
 import { Button } from '~/components/ui/button'
 import { Textarea } from '~/components/ui/textarea'
 import { ThemeToggle } from '~/components/theme-toggle'
+import { AuthButton } from '~/components/auth-button'
 
 export const Route = createFileRoute('/')({
   component: HomePage,
@@ -75,8 +76,9 @@ function HomePage() {
 
   return (
     <main className="relative flex min-h-screen flex-col items-center justify-center bg-background px-4 text-foreground">
-      <div className="absolute right-4 top-4">
+      <div className="absolute right-4 top-4 flex items-center gap-2">
         <ThemeToggle />
+        <AuthButton />
       </div>
 
       <div className="flex w-full max-w-2xl flex-col items-center gap-8">
