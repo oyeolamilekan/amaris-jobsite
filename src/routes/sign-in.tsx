@@ -39,12 +39,15 @@ function SignInPage() {
           <Button
             className="w-full"
             size="lg"
-            onClick={() =>
-              authClient.signIn.social({
+            onClick={async () => {
+              const result = await authClient.signIn.social({
                 provider: 'google',
                 callbackURL: '/',
               })
-            }
+              if (result.error) {
+                console.error('[sign-in]', result.error)
+              }
+            }}
           >
             <GoogleIcon />
             Continue with Google
