@@ -42,7 +42,6 @@ function SignInPage() {
             onClick={async () => {
               const result = await authClient.signIn.social({
                 provider: 'google',
-                callbackURL: '/',
               })
               if (result.error) {
                 console.error('[sign-in]', result.error)

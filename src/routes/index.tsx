@@ -17,6 +17,46 @@ import { AuthButton } from '~/components/auth-button'
 
 export const Route = createFileRoute('/')({
   component: HomePage,
+  head: () => ({
+    meta: [
+      { title: 'Amaris — Find Your Next Role with AI-Powered Job Search' },
+      {
+        name: 'description',
+        content:
+          'Describe your ideal role and Amaris searches top job boards in real time. AI-powered matching across LinkedIn, Indeed, Glassdoor and more.',
+      },
+      {
+        property: 'og:title',
+        content: 'Amaris — Find Your Next Role with AI-Powered Job Search',
+      },
+      {
+        property: 'og:description',
+        content:
+          'Describe your ideal role and Amaris searches top job boards in real time. AI-powered matching across LinkedIn, Indeed, Glassdoor and more.',
+      },
+      { property: 'og:type', content: 'website' },
+    ],
+    scripts: [
+      {
+        type: 'application/ld+json',
+        children: JSON.stringify({
+          '@context': 'https://schema.org',
+          '@type': 'WebSite',
+          name: 'Amaris',
+          description:
+            'AI-powered job search that aggregates results from top job boards in real time.',
+          potentialAction: {
+            '@type': 'SearchAction',
+            target: {
+              '@type': 'EntryPoint',
+              urlTemplate: '{search_term_string}',
+            },
+            'query-input': 'required name=search_term_string',
+          },
+        }),
+      },
+    ],
+  }),
 })
 
 function HomePage() {
@@ -84,11 +124,11 @@ function HomePage() {
       <div className="flex w-full max-w-2xl flex-col items-center gap-8">
         <div className="flex flex-col items-center gap-3 text-center">
           <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
-            Job Search
+            Amaris
           </h1>
           <p className="max-w-md text-base text-muted-foreground">
-            Describe the role you&apos;re looking for and we&apos;ll search
-            approved job boards in real time.
+            Describe your ideal role and we&apos;ll search top job boards in
+            real time.
           </p>
         </div>
 
