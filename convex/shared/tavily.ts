@@ -46,7 +46,7 @@ export type TavilySearchResult = {
  */
 export async function searchTavily(
   apiKey: string,
-  rawQuery: string,
+  query: string,
   options?: {
     searchDepth?: 'basic' | 'advanced'
     maxResults?: number
@@ -57,12 +57,17 @@ export async function searchTavily(
   const maxResults = options?.maxResults ?? DEFAULT_TAVILY_MAX_RESULTS
   const includeRawContent = options?.includeRawContent ?? false
 
-  let query = rawQuery
   if (query.length > MAX_TAVILY_QUERY_LENGTH) {
-    const truncated = query
-      .slice(0, MAX_TAVILY_QUERY_LENGTH)
-      .replace(/\s+\S*$/, '')
-    query = truncated || query.slice(0, MAX_TAVILY_QUERY_LENGTH)
+    throw new SearchStageError({
+      stage: 'tavily-search',
+      message:
+        'The generated search query was too long for Tavily after normalization.',
+      details: serializeFailureDetails({
+        queryLength: query.length,
+        maxLength: MAX_TAVILY_QUERY_LENGTH,
+        query,
+      }),
+    })
   }
 
   const response = await fetch(TAVILY_SEARCH_URL, {
