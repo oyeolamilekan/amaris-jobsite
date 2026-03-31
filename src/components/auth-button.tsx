@@ -1,3 +1,4 @@
+import { Link } from '@tanstack/react-router'
 import { authClient } from '~/lib/auth-client'
 import { LogIn, LogOut, User } from 'lucide-react'
 import { Button } from '~/components/ui/button'
@@ -29,15 +30,11 @@ export function AuthButton() {
 
   if (!session) {
     return (
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={() =>
-          authClient.signIn.social({ provider: 'google', callbackURL: '/' })
-        }
-      >
-        <LogIn data-icon="inline-start" />
-        Sign in
+      <Button asChild variant="ghost" size="sm">
+        <Link to="/sign-in">
+          <LogIn data-icon="inline-start" />
+          Sign in
+        </Link>
       </Button>
     )
   }
