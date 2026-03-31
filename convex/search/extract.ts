@@ -9,8 +9,6 @@ import { extractJobDetailsSystem } from '../shared/prompts'
 import { jobExtractionSchema, type JobExtraction } from '../shared/schemas'
 import type { TavilySearchResult } from '../shared/tavily'
 
-const MAX_RAW_CONTENT_LENGTH = 12_000
-
 /**
  * Null extraction used as a safe fallback when the LLM call fails or produces
  * no usable output.
