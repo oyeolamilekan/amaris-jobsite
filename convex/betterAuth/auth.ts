@@ -26,7 +26,7 @@ export const authComponent = createClient<DataModel, typeof schema>(
 // Better Auth Options
 export const createAuthOptions = (ctx: GenericCtx<DataModel>) => {
   return {
-    appName: 'Jobsite',
+    appName: 'Amaris',
     baseURL: getEnv('SITE_URL'),
     secret: getEnv('BETTER_AUTH_SECRET'),
     database: authComponent.adapter(ctx),

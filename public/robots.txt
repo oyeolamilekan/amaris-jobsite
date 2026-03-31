@@ -1,0 +1,10 @@
+# Amaris — AI-Powered Job Search
+# https://amaris.app
+
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /sign-in
+
+# Sitemap
+Sitemap: https://amaris.app/sitemap.xml

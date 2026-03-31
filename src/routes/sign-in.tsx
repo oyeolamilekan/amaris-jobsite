@@ -12,6 +12,22 @@ import {
 
 export const Route = createFileRoute('/sign-in')({
   component: SignInPage,
+  head: () => ({
+    meta: [
+      { title: 'Sign In — Amaris' },
+      {
+        name: 'description',
+        content:
+          'Sign in to Amaris with your Google account to save searches and access personalized job recommendations.',
+      },
+      { property: 'og:title', content: 'Sign In — Amaris' },
+      {
+        property: 'og:description',
+        content: 'Sign in to Amaris to save searches and get personalized job recommendations.',
+      },
+      { name: 'robots', content: 'noindex, nofollow' },
+    ],
+  }),
 })
 
 function SignInPage() {
@@ -32,7 +48,7 @@ function SignInPage() {
       <Card className="w-full max-w-sm rounded-[1.75rem]">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl">Welcome back</CardTitle>
-          <CardDescription>Sign in to continue to Jobsite</CardDescription>
+          <CardDescription>Sign in to continue to Amaris</CardDescription>
         </CardHeader>
 
         <CardContent className="flex flex-col gap-3">

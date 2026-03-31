@@ -1,6 +1,7 @@
 {
-  "name": "",
-  "short_name": "",
+  "name": "Amaris",
+  "short_name": "Amaris",
+  "description": "AI-powered job search across top job boards",
   "icons": [
     {
       "src": "/android-chrome-192x192.png",
@@ -13,7 +14,9 @@
       "type": "image/png"
     }
   ],
-  "theme_color": "#ffffff",
-  "background_color": "#ffffff",
-  "display": "standalone"
+  "theme_color": "#09090b",
+  "background_color": "#09090b",
+  "display": "standalone",
+  "start_url": "/",
+  "scope": "/"
 }

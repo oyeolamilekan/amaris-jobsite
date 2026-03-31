@@ -41,6 +41,12 @@ export const Route = createFileRoute('/admin')({
   validateSearch: (search: Record<string, unknown>) => ({
     view: (search.view as string) ?? 'searches',
   }),
+  head: () => ({
+    meta: [
+      { title: 'Admin — Amaris' },
+      { name: 'robots', content: 'noindex, nofollow' },
+    ],
+  }),
 })
 
 const ADMIN_PAGE_SIZE = 25
