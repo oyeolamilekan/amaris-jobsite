@@ -9,6 +9,7 @@ import { SearchLoadingScreen } from '~/components/search-loading-screen'
 import {
   ProviderFilter,
   allProviders,
+  defaultProviders,
 } from '~/components/provider-filter'
 import { Button } from '~/components/ui/button'
 import { Textarea } from '~/components/ui/textarea'
@@ -71,7 +72,7 @@ function HomePage() {
   )
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [selectedProviders, setSelectedProviders] = useState<string[]>([
-    ...allProviders,
+    ...defaultProviders,
   ])
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -149,10 +150,17 @@ function HomePage() {
           />
 
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <ProviderFilter
-              selected={selectedProviders}
-              onChange={setSelectedProviders}
-            />
+            <div className="flex items-center gap-2">
+              <ProviderFilter
+                selected={selectedProviders}
+                onChange={setSelectedProviders}
+              />
+              {selectedProviders.length < allProviders.length ? (
+                <span className="text-xs text-muted-foreground">
+                  Click to add more job sites
+                </span>
+              ) : null}
+            </div>
 
             <Button
               className="rounded-full"

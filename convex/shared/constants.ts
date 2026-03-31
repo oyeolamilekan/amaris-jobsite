@@ -288,3 +288,16 @@ export const approvedJobHosts = Array.from(
 export const approvedJobSearchHosts = approvedJobHostFamilies.map(
   (family) => family.queryHost,
 )
+
+/**
+ * Top 5 ATS providers used as the default selection when no filter is applied.
+ * Keeps the site clause short (~80 chars) so the LLM has plenty of room for
+ * search terms within Tavily's 400-char query limit.
+ */
+export const defaultProviders = [
+  'greenhouse',
+  'lever',
+  'workday',
+  'jobs.ashbyhq.com',
+  'smartrecruiters',
+] as const

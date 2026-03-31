@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { ChevronDown } from 'lucide-react'
 import {
   approvedJobHostFamilies,
+  defaultProviders,
   providerLabels,
 } from '../../convex/shared/constants'
 import { Badge } from '~/components/ui/badge'
@@ -104,4 +105,4 @@ export function ProviderFilter({ selected, onChange }: ProviderFilterProps) {
   )
 }
 
-export { allProviders }
+export { allProviders, defaultProviders }

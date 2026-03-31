@@ -6,7 +6,7 @@ import { ChevronLeft, Search } from 'lucide-react'
 import { api } from '../../convex/_generated/api'
 import type { Id } from '../../convex/_generated/dataModel'
 import { SearchLoadingScreen } from '~/components/search-loading-screen'
-import { ProviderFilter, allProviders } from '~/components/provider-filter'
+import { ProviderFilter, allProviders, defaultProviders } from '~/components/provider-filter'
 import { ThemeToggle } from '~/components/theme-toggle'
 import { AuthButton } from '~/components/auth-button'
 import { Badge } from '~/components/ui/badge'
@@ -42,7 +42,7 @@ function ResultsSearchForm({ initialQuery }: ResultsSearchFormProps) {
   )
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [selectedProviders, setSelectedProviders] = useState<string[]>([
-    ...allProviders,
+    ...defaultProviders,
   ])
 
   useEffect(() => {
@@ -123,6 +123,11 @@ function ResultsSearchForm({ initialQuery }: ResultsSearchFormProps) {
                 selected={selectedProviders}
                 onChange={setSelectedProviders}
               />
+              {selectedProviders.length < allProviders.length ? (
+                <span className="text-xs text-muted-foreground">
+                  Click to add more sites
+                </span>
+              ) : null}
               <Button
                 className="rounded-full"
                 disabled={isSubmitting}

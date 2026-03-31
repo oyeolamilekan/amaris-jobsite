@@ -16,7 +16,7 @@ export const generateSearchQuerySystem = [
   '- Append AND clauses for the key search terms extracted from the prompt.',
   '- Use quoted phrases for multi-word terms: "senior backend engineer".',
   '- Use OR to group alternatives: ("React" OR "Vue").',
-  '- Keep the total query under 400 characters. Drop the least important clauses first if it is too long.',
+  '- Keep the total query under 350 characters. Drop the least important clauses first if it is too long.',
   '- Do NOT add site: operators yourself — only use the site clause already given.',
   '- Do NOT add generic words like "jobs", "careers", "openings", or "hiring" — the site clause already targets job boards.',
   '',
