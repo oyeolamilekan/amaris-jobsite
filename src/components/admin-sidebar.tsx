@@ -74,7 +74,7 @@ export function AdminSidebar() {
                     asChild
                     isActive={currentView === item.view}
                   >
-                    <Link to="/admin" search={{ view: item.view }}>
+                    <Link to="/lover-side" search={{ view: item.view }}>
                       <item.icon />
                       <span>{item.title}</span>
                     </Link>
