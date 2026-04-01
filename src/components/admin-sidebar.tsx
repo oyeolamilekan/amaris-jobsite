@@ -47,7 +47,7 @@ export function AdminSidebar() {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
-              <Link to="/admin" search={{ view: 'searches' }}>
+              <Link to="/lover-side" search={{ view: 'searches' }}>
                 <div className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
                   <LayoutDashboard className="size-4" />
                 </div>
