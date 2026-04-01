@@ -6,7 +6,13 @@ import { useMutation as useConvexMutation } from 'convex/react'
 import type { Doc } from '../../convex/_generated/dataModel'
 import { api } from '../../convex/_generated/api'
 import { AVAILABLE_AI_MODELS } from '../../convex/admin/settings'
-import { ArrowLeft, ArrowRight, ArrowUpRight } from 'lucide-react'
+import {
+  ArrowLeft,
+  ArrowRight,
+  ArrowUpRight,
+  ChevronDown,
+  ExternalLink,
+} from 'lucide-react'
 import { Badge } from '~/components/ui/badge'
 import { Button } from '~/components/ui/button'
 import {
@@ -18,6 +24,11 @@ import {
   CardHeader,
   CardTitle,
 } from '~/components/ui/card'
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '~/components/ui/collapsible'
 import {
   Select,
   SelectContent,
@@ -171,143 +182,159 @@ function SavedJobCard({ job }: { job: Doc<'jobResults'> }) {
 
 function SearchRunCard({ entry }: { entry: AdminSearchEntry }) {
   const { search, jobs } = entry
+  const [open, setOpen] = useState(false)
 
   return (
-    <Card className="rounded-[1.5rem]">
-      <CardHeader>
-        <div className="flex flex-col gap-1">
-          <CardTitle>{search.prompt}</CardTitle>
-          <CardDescription>{formatDateTime(search.createdAt)}</CardDescription>
-        </div>
+    <Collapsible open={open} onOpenChange={setOpen}>
+      <Card className="rounded-[1.5rem]">
+        <CollapsibleTrigger asChild>
+          <CardHeader className="cursor-pointer select-none">
+            <div className="flex flex-col gap-1">
+              <CardTitle>{search.prompt}</CardTitle>
+              <CardDescription>
+                {formatDateTime(search.createdAt)}
+              </CardDescription>
+            </div>
 
-        <CardAction className="flex flex-wrap items-center gap-2">
-          <Badge
-            variant={search.status === 'completed' ? 'secondary' : 'outline'}
-          >
-            {formatLabel(search.status)}
-          </Badge>
-          <Badge variant="outline">{search.totalResults} saved</Badge>
-        </CardAction>
-      </CardHeader>
-
-      <CardContent className="flex flex-col gap-4">
-        <div className="grid gap-3 lg:grid-cols-2">
-          <SearchDetail label="Summary" value={search.summary} />
-          <SearchDetail
-            label="Generated Tavily query"
-            mono
-            value={search.tavilyQuery}
-          />
-        </div>
-
-        {search.categories.length > 0 ? (
-          <div className="flex flex-wrap gap-2">
-            {search.categories.map((category) => (
-              <Badge key={category} variant="outline">
-                {category}
+            <CardAction className="flex flex-wrap items-center gap-2">
+              <Badge
+                variant={search.status === 'completed' ? 'secondary' : 'outline'}
+              >
+                {formatLabel(search.status)}
               </Badge>
-            ))}
-          </div>
-        ) : null}
+              <Badge variant="outline">{search.totalResults} saved</Badge>
+              <ChevronDown
+                className={cn(
+                  'h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200',
+                  open && 'rotate-180',
+                )}
+              />
+            </CardAction>
+          </CardHeader>
+        </CollapsibleTrigger>
 
-        {search.failureTrace ? (
-          <div className="flex flex-col gap-3">
-            <div>
-              <h3 className="text-sm font-medium text-foreground">
-                Failure trace
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                Saved debugging context for this failed search run.
-              </p>
-            </div>
-
+        <CollapsibleContent>
+          <CardContent className="flex flex-col gap-4">
             <div className="grid gap-3 lg:grid-cols-2">
+              <SearchDetail label="Summary" value={search.summary} />
               <SearchDetail
-                label="Failure stage"
-                value={formatLabel(search.failureTrace.stage)}
-              />
-              <SearchDetail
-                label="Error message"
-                value={search.failureTrace.errorMessage}
-              />
-              <SearchDetail
-                label="Error name"
-                value={search.failureTrace.errorName}
-              />
-              <SearchDetail
-                label="Tavily request id"
+                label="Generated Tavily query"
                 mono
-                value={search.failureTrace.tavilyRequestId}
-              />
-              <SearchDetail
-                label="Response text"
-                mono
-                value={search.failureTrace.responseText}
-              />
-              <SearchDetail
-                label="Trace details"
-                mono
-                value={search.failureTrace.details}
+                value={search.tavilyQuery}
               />
             </div>
-          </div>
-        ) : null}
 
-        <div className="flex flex-col gap-3">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <h3 className="text-sm font-medium text-foreground">
-                Saved job results
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                Structured job records with admin-only raw source evidence when
-                available.
-              </p>
-            </div>
-            <Badge variant="outline">{jobs.length} saved jobs</Badge>
-          </div>
+            {search.categories.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {search.categories.map((category) => (
+                  <Badge key={category} variant="outline">
+                    {category}
+                  </Badge>
+                ))}
+              </div>
+            ) : null}
 
-          {jobs.length === 0 ? (
-            <p className="text-sm leading-6 text-muted-foreground">
-              {search.status === 'failed'
-                ? 'No saved jobs were stored because this search failed before results could be completed.'
-                : 'No saved jobs were stored for this search.'}
-            </p>
-          ) : (
+            {search.failureTrace ? (
+              <div className="flex flex-col gap-3">
+                <div>
+                  <h3 className="text-sm font-medium text-foreground">
+                    Failure trace
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    Saved debugging context for this failed search run.
+                  </p>
+                </div>
+
+                <div className="grid gap-3 lg:grid-cols-2">
+                  <SearchDetail
+                    label="Failure stage"
+                    value={formatLabel(search.failureTrace.stage)}
+                  />
+                  <SearchDetail
+                    label="Error message"
+                    value={search.failureTrace.errorMessage}
+                  />
+                  <SearchDetail
+                    label="Error name"
+                    value={search.failureTrace.errorName}
+                  />
+                  <SearchDetail
+                    label="Tavily request id"
+                    mono
+                    value={search.failureTrace.tavilyRequestId}
+                  />
+                  <SearchDetail
+                    label="Response text"
+                    mono
+                    value={search.failureTrace.responseText}
+                  />
+                  <SearchDetail
+                    label="Trace details"
+                    mono
+                    value={search.failureTrace.details}
+                  />
+                </div>
+              </div>
+            ) : null}
+
             <div className="flex flex-col gap-3">
-              {jobs.map((job) => (
-                <SavedJobCard job={job} key={job._id} />
-              ))}
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h3 className="text-sm font-medium text-foreground">
+                    Saved job results
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    Structured job records with admin-only raw source evidence
+                    when available.
+                  </p>
+                </div>
+                <Badge variant="outline">{jobs.length} saved jobs</Badge>
+              </div>
+
+              {jobs.length === 0 ? (
+                <p className="text-sm leading-6 text-muted-foreground">
+                  {search.status === 'failed'
+                    ? 'No saved jobs were stored because this search failed before results could be completed.'
+                    : 'No saved jobs were stored for this search.'}
+                </p>
+              ) : (
+                <div className="flex flex-col gap-3">
+                  {jobs.map((job) => (
+                    <SavedJobCard job={job} key={job._id} />
+                  ))}
+                </div>
+              )}
             </div>
-          )}
-        </div>
-      </CardContent>
+          </CardContent>
 
-      <CardFooter className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
-        <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-          <span>{jobs.length} jobs saved</span>
-          <span aria-hidden="true">•</span>
-          <span>{formatDateTime(search.createdAt)}</span>
-        </div>
+          <CardFooter className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
+            <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+              <span>{jobs.length} jobs saved</span>
+              <span aria-hidden="true">•</span>
+              <span>{formatDateTime(search.createdAt)}</span>
+            </div>
 
-        <Button asChild size="sm" variant="outline">
-          <Link
-            search={{
-              q: search.prompt,
-              searchId: search._id,
-            }}
-            to="/results"
-          >
-            Open public view
-          </Link>
-        </Button>
-      </CardFooter>
-    </Card>
+            <Button asChild size="sm" variant="outline">
+              <Link
+                search={{
+                  q: search.prompt,
+                  searchId: search._id,
+                }}
+                to="/results"
+              >
+                Open public view
+              </Link>
+            </Button>
+          </CardFooter>
+        </CollapsibleContent>
+      </Card>
+    </Collapsible>
   )
 }
 
 const VIEW_TITLES: Record<string, string> = {
   searches: 'Search Runs',
+  linkedin: 'LinkedIn Searches',
   settings: 'Settings',
 }
 
@@ -327,7 +354,13 @@ function AdminPage() {
           />
           <h1 className="text-sm font-medium">{title}</h1>
         </header>
-        {view === 'settings' ? <SettingsContent /> : <AdminContent />}
+        {view === 'settings' ? (
+          <SettingsContent />
+        ) : view === 'linkedin' ? (
+          <LinkedInContent />
+        ) : (
+          <AdminContent />
+        )}
       </SidebarInset>
     </SidebarProvider>
   )
@@ -418,6 +451,265 @@ function SettingsContent() {
           </Button>
         </CardFooter>
       </Card>
+    </div>
+  )
+}
+
+type AdminLinkedInEntry = {
+  search: Doc<'linkedinPeopleSearches'>
+  jobContext: { title: string; company: string; location: string } | null
+}
+
+function LinkedInSearchCard({ entry }: { entry: AdminLinkedInEntry }) {
+  const { search, jobContext } = entry
+  const [open, setOpen] = useState(false)
+
+  return (
+    <Collapsible open={open} onOpenChange={setOpen}>
+      <Card className="rounded-[1.5rem]">
+        <CollapsibleTrigger asChild>
+          <CardHeader className="cursor-pointer select-none">
+            <div className="flex flex-col gap-1">
+              <CardTitle>
+                {search.company} — {search.jobTitle}
+              </CardTitle>
+              <CardDescription>
+                {jobContext
+                  ? `${jobContext.title} · ${jobContext.location}`
+                  : formatDateTime(search.createdAt)}
+              </CardDescription>
+            </div>
+
+            <CardAction className="flex flex-wrap items-center gap-2">
+              <Badge
+                variant={
+                  search.status === 'completed' ? 'secondary' : 'outline'
+                }
+              >
+                {formatLabel(search.status)}
+              </Badge>
+              <Badge variant="outline">
+                {search.totalResults} {search.totalResults === 1 ? 'person' : 'people'}
+              </Badge>
+              <ChevronDown
+                className={cn(
+                  'h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200',
+                  open && 'rotate-180',
+                )}
+              />
+            </CardAction>
+          </CardHeader>
+        </CollapsibleTrigger>
+
+        <CollapsibleContent>
+          <CardContent className="flex flex-col gap-4">
+            <div className="grid gap-3 lg:grid-cols-2">
+              <SearchDetail label="Summary" value={search.summary} />
+              <SearchDetail label="Search query" mono value={search.query} />
+            </div>
+
+            {search.people.length > 0 ? (
+              <div className="flex flex-col gap-3">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <h3 className="text-sm font-medium text-foreground">
+                      People found
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      LinkedIn profiles matched for this job.
+                    </p>
+                  </div>
+                  <Badge variant="outline">
+                    {search.people.length} results
+                  </Badge>
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  {search.people.map((person, idx) => (
+                    <Card key={idx} size="sm">
+                      <CardHeader>
+                        <div className="flex flex-col gap-1">
+                          <CardTitle>{person.name}</CardTitle>
+                          <CardDescription>{person.headline}</CardDescription>
+                        </div>
+                        <CardAction className="flex items-center gap-2">
+                          {person.location ? (
+                            <Badge variant="outline">{person.location}</Badge>
+                          ) : null}
+                          {person.linkedinUrl ? (
+                            <Button asChild size="sm" variant="ghost">
+                              <a
+                                href={person.linkedinUrl}
+                                rel="noreferrer"
+                                target="_blank"
+                              >
+                                <ExternalLink className="h-4 w-4" />
+                              </a>
+                            </Button>
+                          ) : null}
+                        </CardAction>
+                      </CardHeader>
+                      {person.reason ? (
+                        <CardContent>
+                          <p className="text-sm text-muted-foreground">
+                            {person.reason}
+                          </p>
+                        </CardContent>
+                      ) : null}
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <p className="text-sm leading-6 text-muted-foreground">
+                No people were found for this search.
+              </p>
+            )}
+          </CardContent>
+
+          <CardFooter className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
+            <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+              <span>{search.totalResults} people</span>
+              <span aria-hidden="true">•</span>
+              <span>{formatDateTime(search.createdAt)}</span>
+            </div>
+          </CardFooter>
+        </CollapsibleContent>
+      </Card>
+    </Collapsible>
+  )
+}
+
+function LinkedInContent() {
+  const [pageIndex, setPageIndex] = useState(0)
+  const [cursorHistory, setCursorHistory] = useState<Array<string | null>>([
+    null,
+  ])
+  const currentCursor = cursorHistory[pageIndex] ?? null
+  const { data, isLoading, isFetching } = useQuery(
+    convexQuery(api.linkedin.queries.getAdminLinkedInSearches, {
+      paginationOpts: {
+        cursor: currentCursor,
+        numItems: ADMIN_PAGE_SIZE,
+      },
+    }),
+  )
+  const searches = data?.page ?? []
+  const completedSearches = searches.filter(
+    (e) => e.search.status === 'completed',
+  ).length
+  const noResultsSearches = searches.filter(
+    (e) => e.search.status === 'no_results',
+  ).length
+  const isFirstPage = pageIndex === 0
+  const isLastPage = data?.isDone ?? true
+
+  function goToPreviousPage() {
+    if (isFirstPage || isFetching) return
+    setPageIndex((i) => Math.max(0, i - 1))
+  }
+
+  function goToNextPage() {
+    if (!data || data.isDone || isFetching) return
+    setCursorHistory((history) => {
+      const next = history.slice(0, pageIndex + 1)
+      if (next[pageIndex + 1] !== data.continueCursor) {
+        next.push(data.continueCursor)
+      }
+      return next
+    })
+    setPageIndex((i) => i + 1)
+  }
+
+  return (
+    <div className="flex flex-1 flex-col gap-6 p-4 pt-0 sm:p-6 sm:pt-0">
+      <Card className="rounded-[1.75rem]">
+        <CardHeader>
+          <CardTitle className="text-3xl sm:text-4xl">
+            LinkedIn people searches
+          </CardTitle>
+          <CardDescription>
+            Browse cached LinkedIn people searches linked to saved job results.
+            Expand a card to see matched profiles.
+          </CardDescription>
+        </CardHeader>
+
+        <CardContent className="grid gap-3 md:grid-cols-3">
+          <AdminStatCard
+            description="LinkedIn searches loaded on this page."
+            title={`${searches.length} searches`}
+          />
+          <AdminStatCard
+            description="Searches that found matching people."
+            title={`${completedSearches} completed`}
+          />
+          <AdminStatCard
+            description="Searches that returned no matching profiles."
+            title={`${noResultsSearches} no results`}
+          />
+        </CardContent>
+      </Card>
+
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-sm text-muted-foreground">
+          Page {pageIndex + 1}
+          {isFetching ? ' • Updating…' : ''}
+        </p>
+
+        <div className="flex gap-2">
+          <Button
+            disabled={isFirstPage || isFetching}
+            onClick={goToPreviousPage}
+            type="button"
+            variant="outline"
+          >
+            <ArrowLeft data-icon="inline-start" />
+            Previous
+          </Button>
+
+          <Button
+            disabled={isLastPage || isFetching}
+            onClick={goToNextPage}
+            type="button"
+            variant="outline"
+          >
+            Next
+            <ArrowRight data-icon="inline-end" />
+          </Button>
+        </div>
+      </div>
+
+      {isLoading && data === undefined ? (
+        <Card className="rounded-[1.5rem]">
+          <CardHeader>
+            <CardTitle>Loading LinkedIn searches</CardTitle>
+            <CardDescription>
+              Fetching the next page of cached LinkedIn people searches.
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      ) : searches.length === 0 ? (
+        <Card className="rounded-[1.5rem]">
+          <CardHeader>
+            <CardTitle>
+              {pageIndex === 0
+                ? 'No LinkedIn searches yet'
+                : 'No more searches'}
+            </CardTitle>
+            <CardDescription>
+              {pageIndex === 0
+                ? 'LinkedIn people searches will appear here once triggered from job results.'
+                : 'There are no LinkedIn searches on this page.'}
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      ) : (
+        <div className="flex flex-col gap-4">
+          {searches.map((entry) => (
+            <LinkedInSearchCard entry={entry} key={entry.search._id} />
+          ))}
+        </div>
+      )}
     </div>
   )
 }

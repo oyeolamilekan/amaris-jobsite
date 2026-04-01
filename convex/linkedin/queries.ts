@@ -1,9 +1,50 @@
+import { paginationOptsValidator } from 'convex/server'
 import { v } from 'convex/values'
 import { internalMutation, internalQuery, query } from '../_generated/server'
 import {
   linkedinPeopleSearchStatusValidator,
   savedLinkedInPersonValidator,
 } from '../shared/validators'
+
+const MAX_ADMIN_LINKEDIN_LIMIT = 100
+
+/**
+ * Paginated admin query for all LinkedIn people searches, ordered by
+ * most-recently created first. Includes minimal job context for each search.
+ */
+export const getAdminLinkedInSearches = query({
+  args: {
+    paginationOpts: paginationOptsValidator,
+  },
+  handler: async (ctx, args) => {
+    const numItems = Math.min(
+      Math.max(args.paginationOpts.numItems, 1),
+      MAX_ADMIN_LINKEDIN_LIMIT,
+    )
+    const paginationOpts = { ...args.paginationOpts, numItems }
+
+    const page = await ctx.db
+      .query('linkedinPeopleSearches')
+      .withIndex('by_createdAt')
+      .order('desc')
+      .paginate(paginationOpts)
+
+    return {
+      ...page,
+      page: await Promise.all(
+        page.page.map(async (search) => {
+          const job = await ctx.db.get(search.jobResultId)
+          return {
+            search,
+            jobContext: job
+              ? { title: job.title, company: job.company, location: job.location }
+              : null,
+          }
+        }),
+      ),
+    }
+  },
+})
 
 /**
  * Internal lookup used by actions to check whether a job already has a cached

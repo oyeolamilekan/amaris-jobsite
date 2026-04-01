@@ -18,12 +18,13 @@ export const Route = createFileRoute('/sign-in')({
       {
         name: 'description',
         content:
-          'Sign in to Amaris with your Google account to save searches and access personalized job recommendations.',
+          'Sign in to Amaris to save searches and access personalized job recommendations.',
       },
       { property: 'og:title', content: 'Sign In — Amaris' },
       {
         property: 'og:description',
-        content: 'Sign in to Amaris to save searches and get personalized job recommendations.',
+        content:
+          'Sign in to Amaris to save searches and get personalized job recommendations.',
       },
       { name: 'robots', content: 'noindex, nofollow' },
     ],

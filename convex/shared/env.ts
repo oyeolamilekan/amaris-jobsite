@@ -43,3 +43,8 @@ export function getSearchRuntimeConfig() {
     tavilyApiKey: getRequiredEnv('TAVILY_API_KEY'),
   }
 }
+
+// Safe env access that doesn't throw — returns '' when unavailable (module init).
+export const getEnv = (name: string) =>
+  (globalThis as { process?: { env?: Record<string, string | undefined> } })
+    .process?.env?.[name] ?? ''
