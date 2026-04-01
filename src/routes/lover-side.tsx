@@ -36,7 +36,7 @@ import {
 import { AdminSidebar } from '~/components/admin-sidebar'
 import { cn } from '~/lib/utils'
 
-export const Route = createFileRoute('/admin')({
+export const Route = createFileRoute('/lover-side')({
   component: AdminPage,
   validateSearch: (search: Record<string, unknown>) => ({
     view: (search.view as string) ?? 'searches',
@@ -138,7 +138,9 @@ function SavedJobCard({ job }: { job: Doc<'jobResults'> }) {
       <CardContent className="flex flex-col gap-3">
         <div className="flex flex-col gap-2">
           <h3 className="text-sm font-medium text-foreground">Summary</h3>
-          <p className="text-sm leading-6 text-muted-foreground">{job.summary}</p>
+          <p className="text-sm leading-6 text-muted-foreground">
+            {job.summary}
+          </p>
         </div>
 
         <div className="flex flex-wrap gap-2">
@@ -151,7 +153,6 @@ function SavedJobCard({ job }: { job: Doc<'jobResults'> }) {
             </Badge>
           ))}
         </div>
-
       </CardContent>
 
       <CardFooter className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
@@ -311,7 +312,7 @@ const VIEW_TITLES: Record<string, string> = {
 }
 
 function AdminPage() {
-  const { view } = useSearch({ from: '/admin' })
+  const { view } = useSearch({ from: '/lover-side' })
   const title = VIEW_TITLES[view] ?? 'Admin'
 
   return (
@@ -364,7 +365,7 @@ function SettingsContent() {
       acc[model.provider].push(model)
       return acc
     },
-    {} as Record<string, typeof AVAILABLE_AI_MODELS[number][]>,
+    {} as Record<string, (typeof AVAILABLE_AI_MODELS)[number][]>,
   )
 
   return (
@@ -423,7 +424,9 @@ function SettingsContent() {
 
 function AdminContent() {
   const [pageIndex, setPageIndex] = useState(0)
-  const [cursorHistory, setCursorHistory] = useState<Array<string | null>>([null])
+  const [cursorHistory, setCursorHistory] = useState<Array<string | null>>([
+    null,
+  ])
   const currentCursor = cursorHistory[pageIndex] ?? null
   const { data, isLoading, isFetching } = useQuery(
     convexQuery(api.search.queries.getAdminSearchRuns, {
@@ -555,10 +558,10 @@ function AdminContent() {
           </CardHeader>
         </Card>
       ) : (
-          <div className="flex flex-col gap-4">
-            {searches.map((entry) => (
-              <SearchRunCard entry={entry} key={entry.search._id} />
-            ))}
+        <div className="flex flex-col gap-4">
+          {searches.map((entry) => (
+            <SearchRunCard entry={entry} key={entry.search._id} />
+          ))}
         </div>
       )}
     </div>

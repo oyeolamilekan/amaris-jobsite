@@ -11,7 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SignInRouteImport } from './routes/sign-in'
 import { Route as ResultsRouteImport } from './routes/results'
-import { Route as AdminRouteImport } from './routes/admin'
+import { Route as LoverSideRouteImport } from './routes/lover-side'
 import { Route as IndexRouteImport } from './routes/index'
 
 const SignInRoute = SignInRouteImport.update({
@@ -24,9 +24,9 @@ const ResultsRoute = ResultsRouteImport.update({
   path: '/results',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AdminRoute = AdminRouteImport.update({
-  id: '/admin',
-  path: '/admin',
+const LoverSideRoute = LoverSideRouteImport.update({
+  id: '/lover-side',
+  path: '/lover-side',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -37,34 +37,34 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
+  '/lover-side': typeof LoverSideRoute
   '/results': typeof ResultsRoute
   '/sign-in': typeof SignInRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
+  '/lover-side': typeof LoverSideRoute
   '/results': typeof ResultsRoute
   '/sign-in': typeof SignInRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
+  '/lover-side': typeof LoverSideRoute
   '/results': typeof ResultsRoute
   '/sign-in': typeof SignInRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/admin' | '/results' | '/sign-in'
+  fullPaths: '/' | '/lover-side' | '/results' | '/sign-in'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/admin' | '/results' | '/sign-in'
-  id: '__root__' | '/' | '/admin' | '/results' | '/sign-in'
+  to: '/' | '/lover-side' | '/results' | '/sign-in'
+  id: '__root__' | '/' | '/lover-side' | '/results' | '/sign-in'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AdminRoute: typeof AdminRoute
+  LoverSideRoute: typeof LoverSideRoute
   ResultsRoute: typeof ResultsRoute
   SignInRoute: typeof SignInRoute
 }
@@ -85,11 +85,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ResultsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/admin': {
-      id: '/admin'
-      path: '/admin'
-      fullPath: '/admin'
-      preLoaderRoute: typeof AdminRouteImport
+    '/lover-side': {
+      id: '/lover-side'
+      path: '/lover-side'
+      fullPath: '/lover-side'
+      preLoaderRoute: typeof LoverSideRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -104,7 +104,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AdminRoute: AdminRoute,
+  LoverSideRoute: LoverSideRoute,
   ResultsRoute: ResultsRoute,
   SignInRoute: SignInRoute,
 }
