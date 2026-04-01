@@ -1,11 +1,5 @@
 import { Link, useSearch } from '@tanstack/react-router'
-import {
-  Home,
-  LayoutDashboard,
-  Search,
-  Settings,
-  Users,
-} from 'lucide-react'
+import { Home, LayoutDashboard, Search, Settings, Users } from 'lucide-react'
 import {
   Sidebar,
   SidebarContent,
@@ -41,7 +35,7 @@ const navItems = [
 export function AdminSidebar() {
   let currentView = 'searches'
   try {
-    const search = useSearch({ from: '/admin' })
+    const search = useSearch({ from: '/lover-side' })
     currentView = search.view ?? 'searches'
   } catch {
     // fallback when not inside the admin route
