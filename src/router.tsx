@@ -3,6 +3,7 @@ import { QueryClient } from '@tanstack/react-query'
 import { routerWithQueryClient } from '@tanstack/react-router-with-query'
 import { ConvexQueryClient } from '@convex-dev/react-query'
 import { ConvexBetterAuthProvider } from '@convex-dev/better-auth/react'
+import { Analytics } from '@vercel/analytics/react'
 import { authClient } from './lib/auth-client'
 import { routeTree } from './routeTree.gen'
 
@@ -39,6 +40,7 @@ export function getRouter() {
           authClient={authClient}
         >
           {children}
+          <Analytics />
         </ConvexBetterAuthProvider>
       ),
     }),
