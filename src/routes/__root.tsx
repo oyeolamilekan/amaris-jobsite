@@ -9,6 +9,7 @@ import type { QueryClient } from '@tanstack/react-query'
 import appCss from '~/styles/app.css?url'
 import { ThemeProvider, themeInitScript } from '~/lib/theme'
 import { TooltipProvider } from '~/components/ui/tooltip'
+import { Analytics } from '@vercel/analytics/react'
 
 const SITE_NAME = 'Amaris'
 const SITE_DESCRIPTION =
@@ -33,7 +34,10 @@ export const Route = createRootRouteWithContext<{
 
       // Twitter Card
       { name: 'twitter:card', content: 'summary_large_image' },
-      { name: 'twitter:title', content: `${SITE_NAME} — AI-Powered Job Search` },
+      {
+        name: 'twitter:title',
+        content: `${SITE_NAME} — AI-Powered Job Search`,
+      },
       { name: 'twitter:description', content: SITE_DESCRIPTION },
 
       // Theme & mobile
@@ -75,6 +79,7 @@ function RootComponent() {
   return (
     <RootDocument>
       <Outlet />
+      <Analytics />
     </RootDocument>
   )
 }
@@ -107,9 +112,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       </head>
       <body>
         <ThemeProvider>
-          <TooltipProvider>
-            {children}
-          </TooltipProvider>
+          <TooltipProvider>{children}</TooltipProvider>
         </ThemeProvider>
         <Scripts />
       </body>
