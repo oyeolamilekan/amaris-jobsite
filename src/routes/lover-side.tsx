@@ -5,7 +5,7 @@ import { Link, createFileRoute, useSearch } from '@tanstack/react-router'
 import { useMutation as useConvexMutation } from 'convex/react'
 import type { Doc } from '../../convex/_generated/dataModel'
 import { api } from '../../convex/_generated/api'
-import { AVAILABLE_AI_MODELS } from '../../convex/admin/settings'
+import { AVAILABLE_AI_MODELS } from '../../convex/shared/constants'
 import {
   ArrowLeft,
   ArrowRight,
@@ -61,6 +61,32 @@ export const Route = createFileRoute('/lover-side')({
 })
 
 const ADMIN_PAGE_SIZE = 25
+
+const TIME_PERIODS = [
+  { label: 'Today', value: 'day', ms: 24 * 60 * 60 * 1000 },
+  { label: 'This week', value: 'week', ms: 7 * 24 * 60 * 60 * 1000 },
+  { label: 'This month', value: 'month', ms: 30 * 24 * 60 * 60 * 1000 },
+  { label: '3 months', value: '3months', ms: 90 * 24 * 60 * 60 * 1000 },
+  { label: '6 months', value: '6months', ms: 180 * 24 * 60 * 60 * 1000 },
+  { label: '12 months', value: '12months', ms: 365 * 24 * 60 * 60 * 1000 },
+  { label: 'All time', value: 'all', ms: 0 },
+] as const
+
+type TimePeriodValue = (typeof TIME_PERIODS)[number]['value']
+
+function getSinceTimestamp(
+  period: TimePeriodValue,
+): number | undefined {
+  const entry = TIME_PERIODS.find((p) => p.value === period)
+  if (!entry || entry.ms === 0) return undefined
+  return Date.now() - entry.ms
+}
+
+function periodLabel(period: TimePeriodValue): string {
+  if (period === 'all') return ''
+  const entry = TIME_PERIODS.find((p) => p.value === period)
+  return entry ? ` ${entry.label.toLowerCase()}` : ''
+}
 
 type AdminSearchEntry = {
   search: Doc<'searchRuns'>
@@ -198,7 +224,9 @@ function SearchRunCard({ entry }: { entry: AdminSearchEntry }) {
 
             <CardAction className="flex flex-wrap items-center gap-2">
               <Badge
-                variant={search.status === 'completed' ? 'secondary' : 'outline'}
+                variant={
+                  search.status === 'completed' ? 'secondary' : 'outline'
+                }
               >
                 {formatLabel(search.status)}
               </Badge>
@@ -489,7 +517,8 @@ function LinkedInSearchCard({ entry }: { entry: AdminLinkedInEntry }) {
                 {formatLabel(search.status)}
               </Badge>
               <Badge variant="outline">
-                {search.totalResults} {search.totalResults === 1 ? 'person' : 'people'}
+                {search.totalResults}{' '}
+                {search.totalResults === 1 ? 'person' : 'people'}
               </Badge>
               <ChevronDown
                 className={cn(
@@ -582,6 +611,7 @@ function LinkedInSearchCard({ entry }: { entry: AdminLinkedInEntry }) {
 
 function LinkedInContent() {
   const [pageIndex, setPageIndex] = useState(0)
+  const [statsPeriod, setStatsPeriod] = useState<TimePeriodValue>('all')
   const [cursorHistory, setCursorHistory] = useState<Array<string | null>>([
     null,
   ])
@@ -594,15 +624,15 @@ function LinkedInContent() {
       },
     }),
   )
+  const { data: stats } = useQuery(
+    convexQuery(api.linkedin.queries.getAdminLinkedInStats, {
+      sinceTimestamp: getSinceTimestamp(statsPeriod),
+    }),
+  )
   const searches = data?.page ?? []
-  const completedSearches = searches.filter(
-    (e) => e.search.status === 'completed',
-  ).length
-  const noResultsSearches = searches.filter(
-    (e) => e.search.status === 'no_results',
-  ).length
   const isFirstPage = pageIndex === 0
   const isLastPage = data?.isDone ?? true
+  const suffix = periodLabel(statsPeriod)
 
   function goToPreviousPage() {
     if (isFirstPage || isFetching) return
@@ -625,27 +655,46 @@ function LinkedInContent() {
     <div className="flex flex-1 flex-col gap-6 p-4 pt-0 sm:p-6 sm:pt-0">
       <Card className="rounded-[1.75rem]">
         <CardHeader>
-          <CardTitle className="text-3xl sm:text-4xl">
-            LinkedIn people searches
-          </CardTitle>
-          <CardDescription>
-            Browse cached LinkedIn people searches linked to saved job results.
-            Expand a card to see matched profiles.
-          </CardDescription>
+          <div className="flex flex-col gap-1">
+            <CardTitle className="text-3xl sm:text-4xl">
+              LinkedIn people searches
+            </CardTitle>
+            <CardDescription>
+              Browse cached LinkedIn people searches linked to saved job
+              results. Expand a card to see matched profiles.
+            </CardDescription>
+          </div>
+          <CardAction>
+            <Select
+              value={statsPeriod}
+              onValueChange={(v) => setStatsPeriod(v as TimePeriodValue)}
+            >
+              <SelectTrigger className="w-36">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {TIME_PERIODS.map((p) => (
+                  <SelectItem key={p.value} value={p.value}>
+                    {p.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </CardAction>
         </CardHeader>
 
         <CardContent className="grid gap-3 md:grid-cols-3">
           <AdminStatCard
-            description="LinkedIn searches loaded on this page."
-            title={`${searches.length} searches`}
+            description={`Total LinkedIn searches${suffix}.`}
+            title={`${stats?.total ?? '—'} searches`}
           />
           <AdminStatCard
-            description="Searches that found matching people."
-            title={`${completedSearches} completed`}
+            description={`Searches that found matching people${suffix}.`}
+            title={`${stats?.completed ?? '—'} completed`}
           />
           <AdminStatCard
-            description="Searches that returned no matching profiles."
-            title={`${noResultsSearches} no results`}
+            description={`Searches that returned no profiles${suffix}.`}
+            title={`${stats?.noResults ?? '—'} no results`}
           />
         </CardContent>
       </Card>
@@ -716,6 +765,7 @@ function LinkedInContent() {
 
 function AdminContent() {
   const [pageIndex, setPageIndex] = useState(0)
+  const [statsPeriod, setStatsPeriod] = useState<TimePeriodValue>('all')
   const [cursorHistory, setCursorHistory] = useState<Array<string | null>>([
     null,
   ])
@@ -728,16 +778,15 @@ function AdminContent() {
       },
     }),
   )
+  const { data: stats } = useQuery(
+    convexQuery(api.search.queries.getAdminSearchStats, {
+      sinceTimestamp: getSinceTimestamp(statsPeriod),
+    }),
+  )
   const searches = data?.page ?? []
-  const completedSearches = searches.filter(
-    (entry) => entry.search.status === 'completed',
-  ).length
-  const failedSearches = searches.filter(
-    (entry) => entry.search.status === 'failed',
-  ).length
-  const totalJobs = searches.reduce((sum, entry) => sum + entry.jobs.length, 0)
   const isFirstPage = pageIndex === 0
   const isLastPage = data?.isDone ?? true
+  const suffix = periodLabel(statsPeriod)
 
   function goToPreviousPage() {
     if (isFirstPage || isFetching) {
@@ -768,32 +817,51 @@ function AdminContent() {
     <div className="flex flex-1 flex-col gap-6 p-4 pt-0 sm:p-6 sm:pt-0">
       <Card className="rounded-[1.75rem]">
         <CardHeader>
-          <CardTitle className="text-3xl sm:text-4xl">
-            Search queries, saved results, and failure traces
-          </CardTitle>
-          <CardDescription>
-            Review one page of saved search runs at a time, the queries that
-            produced them, any failed traces saved for debugging, and the saved
-            jobs currently stored in Convex.
-          </CardDescription>
+          <div className="flex flex-col gap-1">
+            <CardTitle className="text-3xl sm:text-4xl">
+              Search queries, saved results, and failure traces
+            </CardTitle>
+            <CardDescription>
+              Review saved search runs, the queries that produced them, any
+              failed traces saved for debugging, and the saved jobs currently
+              stored in Convex.
+            </CardDescription>
+          </div>
+          <CardAction>
+            <Select
+              value={statsPeriod}
+              onValueChange={(v) => setStatsPeriod(v as TimePeriodValue)}
+            >
+              <SelectTrigger className="w-36">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {TIME_PERIODS.map((p) => (
+                  <SelectItem key={p.value} value={p.value}>
+                    {p.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </CardAction>
         </CardHeader>
 
         <CardContent className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
           <AdminStatCard
-            description="Search runs currently loaded on this page."
-            title={`${searches.length} searches`}
+            description={`Total search runs${suffix}.`}
+            title={`${stats?.total ?? '—'} searches`}
           />
           <AdminStatCard
-            description="Runs on this page that completed and produced a structured outcome."
-            title={`${completedSearches} completed`}
+            description={`Runs that completed successfully${suffix}.`}
+            title={`${stats?.completed ?? '—'} completed`}
           />
           <AdminStatCard
-            description="Runs on this page that failed and now include saved trace context for debugging."
-            title={`${failedSearches} failed`}
+            description={`Runs that failed${suffix}.`}
+            title={`${stats?.failed ?? '—'} failed`}
           />
           <AdminStatCard
-            description="Saved jobs currently visible across this page of searches."
-            title={`${totalJobs} jobs`}
+            description={`Total saved jobs${suffix}.`}
+            title={`${stats?.totalJobs ?? '—'} jobs`}
           />
         </CardContent>
       </Card>

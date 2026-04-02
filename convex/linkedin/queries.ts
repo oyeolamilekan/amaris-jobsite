@@ -47,6 +47,43 @@ export const getAdminLinkedInSearches = query({
 })
 
 /**
+ * Aggregate stats for LinkedIn people searches within an optional time window.
+ * Used by the admin dashboard stat cards with time-period filtering.
+ */
+export const getAdminLinkedInStats = query({
+  args: {
+    sinceTimestamp: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    let q = ctx.db
+      .query('linkedinPeopleSearches')
+      .withIndex('by_createdAt')
+
+    if (args.sinceTimestamp !== undefined) {
+      q = q.filter((row) =>
+        row.gte(row.field('createdAt'), args.sinceTimestamp!),
+      )
+    }
+
+    const docs = await q.collect()
+
+    let completed = 0
+    let noResults = 0
+
+    for (const doc of docs) {
+      if (doc.status === 'completed') completed++
+      else if (doc.status === 'no_results') noResults++
+    }
+
+    return {
+      total: docs.length,
+      completed,
+      noResults,
+    }
+  },
+})
+
+/**
  * Internal lookup used by actions to check whether a job already has a cached
  * LinkedIn people search.
  */

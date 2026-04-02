@@ -166,3 +166,39 @@ export const getAdminSearchRuns = query({
     }
   },
 })
+
+/**
+ * Aggregate stats for search runs within an optional time window.
+ * Used by the admin dashboard stat cards with time-period filtering.
+ */
+export const getAdminSearchStats = query({
+  args: {
+    sinceTimestamp: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    let q = ctx.db.query('searchRuns').withIndex('by_createdAt')
+
+    if (args.sinceTimestamp !== undefined) {
+      q = q.filter((row) => row.gte(row.field('createdAt'), args.sinceTimestamp!))
+    }
+
+    const docs = await q.collect()
+
+    let completed = 0
+    let failed = 0
+    let totalJobs = 0
+
+    for (const doc of docs) {
+      if (doc.status === 'completed') completed++
+      else if (doc.status === 'failed') failed++
+      totalJobs += doc.totalResults
+    }
+
+    return {
+      total: docs.length,
+      completed,
+      failed,
+      totalJobs,
+    }
+  },
+})
