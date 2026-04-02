@@ -137,10 +137,11 @@ export const getSearchResultPage = query({
 export const getAdminSearchRuns = query({
   args: {
     paginationOpts: paginationOptsValidator,
+    sinceTimestamp: v.optional(v.number()),
   },
   /**
    * @param ctx - Query context used to read recent search runs and their jobs.
-   * @param args - Cursor-based pagination options for recent admin search runs.
+   * @param args - Cursor-based pagination options and optional time filter.
    * @returns One page of recent search runs with their saved job results.
    */
   handler: async (ctx, args) => {
@@ -148,11 +149,18 @@ export const getAdminSearchRuns = query({
       ...args.paginationOpts,
       numItems: resolveAdminSearchLimit(args.paginationOpts.numItems),
     }
-    const searchPage = await ctx.db
+    let q = ctx.db
       .query('searchRuns')
       .withIndex('by_createdAt')
       .order('desc')
-      .paginate(paginationOpts)
+
+    if (args.sinceTimestamp !== undefined) {
+      q = q.filter((row) =>
+        row.gte(row.field('createdAt'), args.sinceTimestamp!),
+      )
+    }
+
+    const searchPage = await q.paginate(paginationOpts)
 
     return {
       ...searchPage,

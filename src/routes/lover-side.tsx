@@ -615,6 +615,7 @@ function LinkedInContent() {
   const [cursorHistory, setCursorHistory] = useState<Array<string | null>>([
     null,
   ])
+  const sinceTimestamp = getSinceTimestamp(statsPeriod)
   const currentCursor = cursorHistory[pageIndex] ?? null
   const { data, isLoading, isFetching } = useQuery(
     convexQuery(api.linkedin.queries.getAdminLinkedInSearches, {
@@ -622,11 +623,12 @@ function LinkedInContent() {
         cursor: currentCursor,
         numItems: ADMIN_PAGE_SIZE,
       },
+      sinceTimestamp,
     }),
   )
   const { data: stats } = useQuery(
     convexQuery(api.linkedin.queries.getAdminLinkedInStats, {
-      sinceTimestamp: getSinceTimestamp(statsPeriod),
+      sinceTimestamp,
     }),
   )
   const searches = data?.page ?? []
@@ -667,7 +669,11 @@ function LinkedInContent() {
           <CardAction>
             <Select
               value={statsPeriod}
-              onValueChange={(v) => setStatsPeriod(v as TimePeriodValue)}
+              onValueChange={(v) => {
+                setStatsPeriod(v as TimePeriodValue)
+                setPageIndex(0)
+                setCursorHistory([null])
+              }}
             >
               <SelectTrigger className="w-36">
                 <SelectValue />
@@ -769,6 +775,7 @@ function AdminContent() {
   const [cursorHistory, setCursorHistory] = useState<Array<string | null>>([
     null,
   ])
+  const sinceTimestamp = getSinceTimestamp(statsPeriod)
   const currentCursor = cursorHistory[pageIndex] ?? null
   const { data, isLoading, isFetching } = useQuery(
     convexQuery(api.search.queries.getAdminSearchRuns, {
@@ -776,11 +783,12 @@ function AdminContent() {
         cursor: currentCursor,
         numItems: ADMIN_PAGE_SIZE,
       },
+      sinceTimestamp,
     }),
   )
   const { data: stats } = useQuery(
     convexQuery(api.search.queries.getAdminSearchStats, {
-      sinceTimestamp: getSinceTimestamp(statsPeriod),
+      sinceTimestamp,
     }),
   )
   const searches = data?.page ?? []
@@ -830,7 +838,11 @@ function AdminContent() {
           <CardAction>
             <Select
               value={statsPeriod}
-              onValueChange={(v) => setStatsPeriod(v as TimePeriodValue)}
+              onValueChange={(v) => {
+                setStatsPeriod(v as TimePeriodValue)
+                setPageIndex(0)
+                setCursorHistory([null])
+              }}
             >
               <SelectTrigger className="w-36">
                 <SelectValue />

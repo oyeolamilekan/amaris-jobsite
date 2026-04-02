@@ -15,6 +15,7 @@ const MAX_ADMIN_LINKEDIN_LIMIT = 100
 export const getAdminLinkedInSearches = query({
   args: {
     paginationOpts: paginationOptsValidator,
+    sinceTimestamp: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     const numItems = Math.min(
@@ -23,11 +24,18 @@ export const getAdminLinkedInSearches = query({
     )
     const paginationOpts = { ...args.paginationOpts, numItems }
 
-    const page = await ctx.db
+    let q = ctx.db
       .query('linkedinPeopleSearches')
       .withIndex('by_createdAt')
       .order('desc')
-      .paginate(paginationOpts)
+
+    if (args.sinceTimestamp !== undefined) {
+      q = q.filter((row) =>
+        row.gte(row.field('createdAt'), args.sinceTimestamp!),
+      )
+    }
+
+    const page = await q.paginate(paginationOpts)
 
     return {
       ...page,
