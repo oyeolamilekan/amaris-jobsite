@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { convexQuery } from '@convex-dev/react-query'
 import { Link, createFileRoute, useSearch } from '@tanstack/react-router'
@@ -86,6 +86,10 @@ function periodLabel(period: TimePeriodValue): string {
   if (period === 'all') return ''
   const entry = TIME_PERIODS.find((p) => p.value === period)
   return entry ? ` ${entry.label.toLowerCase()}` : ''
+}
+
+function useSinceTimestamp(period: TimePeriodValue) {
+  return useMemo(() => getSinceTimestamp(period), [period])
 }
 
 type AdminSearchEntry = {
@@ -615,7 +619,7 @@ function LinkedInContent() {
   const [cursorHistory, setCursorHistory] = useState<Array<string | null>>([
     null,
   ])
-  const sinceTimestamp = getSinceTimestamp(statsPeriod)
+  const sinceTimestamp = useSinceTimestamp(statsPeriod)
   const currentCursor = cursorHistory[pageIndex] ?? null
   const { data, isLoading, isFetching } = useQuery(
     convexQuery(api.linkedin.queries.getAdminLinkedInSearches, {
@@ -775,7 +779,7 @@ function AdminContent() {
   const [cursorHistory, setCursorHistory] = useState<Array<string | null>>([
     null,
   ])
-  const sinceTimestamp = getSinceTimestamp(statsPeriod)
+  const sinceTimestamp = useSinceTimestamp(statsPeriod)
   const currentCursor = cursorHistory[pageIndex] ?? null
   const { data, isLoading, isFetching } = useQuery(
     convexQuery(api.search.queries.getAdminSearchRuns, {

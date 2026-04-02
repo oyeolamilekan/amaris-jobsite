@@ -47,6 +47,19 @@ function resolveAdminSearchLimit(requestedLimit: number | undefined) {
   return Math.max(1, Math.min(Math.floor(limit), MAX_ADMIN_SEARCH_LIMIT))
 }
 
+function queryAdminSearchRunsByCreatedAt(
+  ctx: QueryCtx,
+  sinceTimestamp: number | undefined,
+) {
+  if (sinceTimestamp === undefined) {
+    return ctx.db.query('searchRuns').withIndex('by_createdAt')
+  }
+
+  return ctx.db
+    .query('searchRuns')
+    .withIndex('by_createdAt', (q) => q.gte('createdAt', sinceTimestamp))
+}
+
 /**
  * Persists a search run and any structured job results created for it.
  */
@@ -149,18 +162,12 @@ export const getAdminSearchRuns = query({
       ...args.paginationOpts,
       numItems: resolveAdminSearchLimit(args.paginationOpts.numItems),
     }
-    let q = ctx.db
-      .query('searchRuns')
-      .withIndex('by_createdAt')
+    const searchPage = await queryAdminSearchRunsByCreatedAt(
+      ctx,
+      args.sinceTimestamp,
+    )
       .order('desc')
-
-    if (args.sinceTimestamp !== undefined) {
-      q = q.filter((row) =>
-        row.gte(row.field('createdAt'), args.sinceTimestamp!),
-      )
-    }
-
-    const searchPage = await q.paginate(paginationOpts)
+      .paginate(paginationOpts)
 
     return {
       ...searchPage,
@@ -184,13 +191,10 @@ export const getAdminSearchStats = query({
     sinceTimestamp: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    let q = ctx.db.query('searchRuns').withIndex('by_createdAt')
-
-    if (args.sinceTimestamp !== undefined) {
-      q = q.filter((row) => row.gte(row.field('createdAt'), args.sinceTimestamp!))
-    }
-
-    const docs = await q.collect()
+    const docs = await queryAdminSearchRunsByCreatedAt(
+      ctx,
+      args.sinceTimestamp,
+    ).collect()
 
     let completed = 0
     let failed = 0

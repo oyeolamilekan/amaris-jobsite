@@ -1,5 +1,6 @@
 import { paginationOptsValidator } from 'convex/server'
 import { v } from 'convex/values'
+import type { QueryCtx } from '../_generated/server'
 import { internalMutation, internalQuery, query } from '../_generated/server'
 import {
   linkedinPeopleSearchStatusValidator,
@@ -7,6 +8,20 @@ import {
 } from '../shared/validators'
 
 const MAX_ADMIN_LINKEDIN_LIMIT = 100
+
+function queryAdminLinkedInSearchesByCreatedAt(
+  ctx: QueryCtx,
+  sinceTimestamp: number | undefined,
+) {
+  if (sinceTimestamp === undefined) {
+    return ctx.db.query('linkedinPeopleSearches').withIndex('by_createdAt')
+  }
+
+  return ctx.db.query('linkedinPeopleSearches').withIndex(
+    'by_createdAt',
+    (q) => q.gte('createdAt', sinceTimestamp),
+  )
+}
 
 /**
  * Paginated admin query for all LinkedIn people searches, ordered by
@@ -23,19 +38,12 @@ export const getAdminLinkedInSearches = query({
       MAX_ADMIN_LINKEDIN_LIMIT,
     )
     const paginationOpts = { ...args.paginationOpts, numItems }
-
-    let q = ctx.db
-      .query('linkedinPeopleSearches')
-      .withIndex('by_createdAt')
+    const page = await queryAdminLinkedInSearchesByCreatedAt(
+      ctx,
+      args.sinceTimestamp,
+    )
       .order('desc')
-
-    if (args.sinceTimestamp !== undefined) {
-      q = q.filter((row) =>
-        row.gte(row.field('createdAt'), args.sinceTimestamp!),
-      )
-    }
-
-    const page = await q.paginate(paginationOpts)
+      .paginate(paginationOpts)
 
     return {
       ...page,
@@ -63,17 +71,10 @@ export const getAdminLinkedInStats = query({
     sinceTimestamp: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    let q = ctx.db
-      .query('linkedinPeopleSearches')
-      .withIndex('by_createdAt')
-
-    if (args.sinceTimestamp !== undefined) {
-      q = q.filter((row) =>
-        row.gte(row.field('createdAt'), args.sinceTimestamp!),
-      )
-    }
-
-    const docs = await q.collect()
+    const docs = await queryAdminLinkedInSearchesByCreatedAt(
+      ctx,
+      args.sinceTimestamp,
+    ).collect()
 
     let completed = 0
     let noResults = 0
