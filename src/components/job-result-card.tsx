@@ -12,12 +12,85 @@ import {
   CardHeader,
   CardTitle,
 } from '~/components/ui/card'
+import { cn } from '~/lib/utils'
 
 function formatLabel(value: string) {
   return value
     .split('-')
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(' ')
+}
+
+function resolveMatchPercentage(job: Doc<'jobResults'>) {
+  if (typeof job.relevance === 'number') {
+    return Math.max(0, Math.min(100, Math.round(job.relevance)))
+  }
+
+  if (typeof job.matchScore === 'number') {
+    return Math.max(0, Math.min(100, Math.round(job.matchScore)))
+  }
+
+  return 0
+}
+
+const matchBadgeBands = [
+  {
+    min: 90,
+    className:
+      'border-emerald-500/35 bg-emerald-500/12 text-emerald-800 dark:border-emerald-400/35 dark:bg-emerald-500/20 dark:text-emerald-200',
+  },
+  {
+    min: 80,
+    className:
+      'border-green-500/35 bg-green-500/12 text-green-800 dark:border-green-400/35 dark:bg-green-500/20 dark:text-green-200',
+  },
+  {
+    min: 70,
+    className:
+      'border-lime-500/35 bg-lime-500/15 text-lime-900 dark:border-lime-400/35 dark:bg-lime-500/20 dark:text-lime-100',
+  },
+  {
+    min: 60,
+    className:
+      'border-yellow-500/40 bg-yellow-500/20 text-yellow-900 dark:border-yellow-400/35 dark:bg-yellow-500/20 dark:text-yellow-100',
+  },
+  {
+    min: 50,
+    className:
+      'border-amber-500/40 bg-amber-500/18 text-amber-900 dark:border-amber-400/35 dark:bg-amber-500/20 dark:text-amber-100',
+  },
+  {
+    min: 40,
+    className:
+      'border-orange-500/40 bg-orange-500/18 text-orange-900 dark:border-orange-400/35 dark:bg-orange-500/20 dark:text-orange-100',
+  },
+  {
+    min: 30,
+    className:
+      'border-red-500/35 bg-red-500/12 text-red-800 dark:border-red-400/35 dark:bg-red-500/20 dark:text-red-200',
+  },
+  {
+    min: 20,
+    className:
+      'border-rose-500/35 bg-rose-500/12 text-rose-800 dark:border-rose-400/35 dark:bg-rose-500/20 dark:text-rose-200',
+  },
+  {
+    min: 10,
+    className:
+      'border-pink-500/35 bg-pink-500/12 text-pink-800 dark:border-pink-400/35 dark:bg-pink-500/20 dark:text-pink-200',
+  },
+  {
+    min: 0,
+    className:
+      'border-fuchsia-500/35 bg-fuchsia-500/12 text-fuchsia-800 dark:border-fuchsia-400/35 dark:bg-fuchsia-500/20 dark:text-fuchsia-200',
+  },
+] as const
+
+function getMatchBadgeClassName(matchPercentage: number) {
+  return (
+    matchBadgeBands.find((band) => matchPercentage >= band.min)?.className ??
+    matchBadgeBands[matchBadgeBands.length - 1].className
+  )
 }
 
 type JobResultCardProps = {
@@ -34,6 +107,7 @@ export function JobResultCard({
   onViewPeople,
 }: JobResultCardProps) {
   const [showFavicon, setShowFavicon] = useState(() => Boolean(job.favicon))
+  const matchPercentage = resolveMatchPercentage(job)
 
   return (
     <Card className="rounded-[1.5rem]">
@@ -58,9 +132,15 @@ export function JobResultCard({
             </CardDescription>
           </div>
 
-          {job.rank === 1 ? (
-            <Badge className="w-fit shrink-0">Best match</Badge>
-          ) : null}
+          <Badge
+            className={cn(
+              'w-fit shrink-0 border font-semibold tabular-nums',
+              getMatchBadgeClassName(matchPercentage),
+            )}
+            variant="outline"
+          >
+            {matchPercentage}% match
+          </Badge>
         </div>
       </CardHeader>
 

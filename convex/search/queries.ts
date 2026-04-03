@@ -32,6 +32,22 @@ async function getSavedJobsForSearchRun(
     .take(MAX_SAVED_JOB_RESULTS)
 }
 
+function resolveJobMatchPercentage(job: {
+  relevance?: number
+  matchScore?: number
+  rank: number
+}) {
+  if (typeof job.relevance === 'number') {
+    return job.relevance
+  }
+
+  if (typeof job.matchScore === 'number') {
+    return job.matchScore
+  }
+
+  return 0
+}
+
 /**
  * Clamps the admin search-view limit to a safe bounded range.
  *
@@ -135,11 +151,21 @@ export const getSearchResultPage = query({
         q.eq('searchRunId', args.searchId),
       )
       .take(MAX_SAVED_JOB_RESULTS)
+    const sortedJobs = [...jobs].sort((a, b) => {
+      const matchDifference =
+        resolveJobMatchPercentage(b) - resolveJobMatchPercentage(a)
+
+      if (matchDifference !== 0) {
+        return matchDifference
+      }
+
+      return a.rank - b.rank
+    })
     const { failureTrace: _failureTrace, ...publicSearch } = search
 
     return {
       search: publicSearch,
-      jobs,
+      jobs: sortedJobs,
     }
   },
 })
