@@ -15,14 +15,7 @@ import {
   MAX_SELECTED_PROVIDERS,
   providerLabels,
 } from '../../convex/shared/constants'
-import { Badge } from '~/components/ui/badge'
 import { Button } from '~/components/ui/button'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-} from '~/components/ui/card'
 import { Textarea } from '~/components/ui/textarea'
 import { ThemeToggle } from '~/components/theme-toggle'
 import { AuthButton } from '~/components/auth-button'
