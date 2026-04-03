@@ -1,7 +1,13 @@
 import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { convexQuery } from '@convex-dev/react-query'
-import { Link, createFileRoute, useSearch } from '@tanstack/react-router'
+import { createServerFn } from '@tanstack/react-start'
+import {
+  Link,
+  createFileRoute,
+  redirect,
+  useSearch,
+} from '@tanstack/react-router'
 import { useMutation as useConvexMutation } from 'convex/react'
 import type { Doc } from '../../convex/_generated/dataModel'
 import { api } from '../../convex/_generated/api'
@@ -45,13 +51,87 @@ import {
   SidebarTrigger,
 } from '~/components/ui/sidebar'
 import { AdminSidebar } from '~/components/admin-sidebar'
+import { fetchAuthQuery } from '~/lib/auth-server'
 import { cn } from '~/lib/utils'
 
+const ADMIN_VIEWS = ['searches', 'linkedin', 'settings'] as const
+type AdminView = (typeof ADMIN_VIEWS)[number]
+const ADMIN_VIEW_SET = new Set<string>(ADMIN_VIEWS)
+
+type AdminRouteAccess =
+  | { status: 'unauthenticated' }
+  | {
+      status: 'authorized'
+      user: { email: string; name: string; role: 'admin' }
+    }
+  | {
+      status: 'forbidden'
+      user: { email: string; name: string; role: 'standard' }
+    }
+
+const getAdminRouteAccess = createServerFn({ method: 'GET' }).handler(
+  async (): Promise<AdminRouteAccess> => {
+    const user = await fetchAuthQuery(api.auth.getCurrentUser, {})
+
+    if (user === null) {
+      return { status: 'unauthenticated' }
+    }
+
+    if (user.role !== 'admin') {
+      return {
+        status: 'forbidden',
+        user: {
+          email: user.email,
+          name: user.name,
+          role: 'standard',
+        },
+      }
+    }
+
+    return {
+      status: 'authorized',
+      user: {
+        email: user.email,
+        name: user.name,
+        role: 'admin',
+      },
+    }
+  },
+)
+
+function adminRedirectPath(view: AdminView) {
+  if (view === 'searches') {
+    return '/lover-side'
+  }
+
+  return `/lover-side?view=${encodeURIComponent(view)}`
+}
+
 export const Route = createFileRoute('/lover-side')({
-  component: AdminPage,
   validateSearch: (search: Record<string, unknown>) => ({
-    view: (search.view as string) ?? 'searches',
+    view:
+      typeof search.view === 'string' && ADMIN_VIEW_SET.has(search.view)
+        ? (search.view as AdminView)
+        : 'searches',
   }),
+  loaderDeps: ({ search }) => ({
+    view: search.view,
+  }),
+  loader: async ({ deps }) => {
+    const access = await getAdminRouteAccess()
+
+    if (access.status === 'unauthenticated') {
+      throw redirect({
+        to: '/sign-in',
+        search: {
+          redirect: adminRedirectPath(deps.view),
+        },
+      })
+    }
+
+    return access
+  },
+  component: LoverSideRouteComponent,
   head: () => ({
     meta: [
       { title: 'Admin — Amaris' },
@@ -74,9 +154,7 @@ const TIME_PERIODS = [
 
 type TimePeriodValue = (typeof TIME_PERIODS)[number]['value']
 
-function getSinceTimestamp(
-  period: TimePeriodValue,
-): number | undefined {
+function getSinceTimestamp(period: TimePeriodValue): number | undefined {
   const entry = TIME_PERIODS.find((p) => p.value === period)
   if (!entry || entry.ms === 0) return undefined
   return Date.now() - entry.ms
@@ -364,10 +442,42 @@ function SearchRunCard({ entry }: { entry: AdminSearchEntry }) {
   )
 }
 
-const VIEW_TITLES: Record<string, string> = {
+const VIEW_TITLES: Record<AdminView, string> = {
   searches: 'Search Runs',
   linkedin: 'LinkedIn Searches',
   settings: 'Settings',
+}
+
+function LoverSideRouteComponent() {
+  const access = Route.useLoaderData()
+
+  if (access.status === 'forbidden') {
+    return <ForbiddenAdminAccess email={access.user.email} />
+  }
+
+  return <AdminPage />
+}
+
+function ForbiddenAdminAccess({ email }: { email: string }) {
+  return (
+    <main className="flex min-h-screen items-center justify-center bg-background px-4 text-foreground">
+      <Card className="w-full max-w-lg rounded-[1.75rem]">
+        <CardHeader className="text-center">
+          <CardTitle className="text-2xl">Admin access required</CardTitle>
+          <CardDescription>
+            You&apos;re signed in as {email}, but this account does not have the
+            admin role required for this page.
+          </CardDescription>
+        </CardHeader>
+
+        <CardContent className="flex justify-center">
+          <Button asChild>
+            <Link to="/">Back to home</Link>
+          </Button>
+        </CardContent>
+      </Card>
+    </main>
+  )
 }
 
 function AdminPage() {

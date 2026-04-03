@@ -28,6 +28,7 @@ export async function classifyAndBuildQuery(
  * Returns everything needed to persist a completed search.
  */
 export async function runJobSearchPipeline(
+  prompt: string,
   tavilyQuery: string,
   modelId?: string,
 ) {
@@ -35,7 +36,11 @@ export async function runJobSearchPipeline(
 
   const tavilyResults = await searchTavilyJobs(tavilyApiKey, tavilyQuery)
 
-  const extractions = await extractAllJobDetails(tavilyResults.results, modelId)
+  const extractions = await extractAllJobDetails(
+    tavilyResults.results,
+    prompt,
+    modelId,
+  )
 
   const jobs = tavilyResultsToJobs(tavilyResults.results, extractions)
 

@@ -1,5 +1,6 @@
 import { paginationOptsValidator } from 'convex/server'
 import { v } from 'convex/values'
+import { requireAdminUser } from '../auth'
 import type { QueryCtx } from '../_generated/server'
 import { internalMutation, internalQuery, query } from '../_generated/server'
 import {
@@ -33,6 +34,7 @@ export const getAdminLinkedInSearches = query({
     sinceTimestamp: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
+    await requireAdminUser(ctx)
     const numItems = Math.min(
       Math.max(args.paginationOpts.numItems, 1),
       MAX_ADMIN_LINKEDIN_LIMIT,
@@ -71,6 +73,7 @@ export const getAdminLinkedInStats = query({
     sinceTimestamp: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
+    await requireAdminUser(ctx)
     const docs = await queryAdminLinkedInSearchesByCreatedAt(
       ctx,
       args.sinceTimestamp,

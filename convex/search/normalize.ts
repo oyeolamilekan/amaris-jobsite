@@ -3,6 +3,7 @@ import type { JobExtraction } from '../shared/schemas'
 import type { TavilySearchResult } from '../shared/tavily'
 
 const MAX_JOB_SUMMARY_LENGTH = 500
+type TavilySingleResult = TavilySearchResult['results'][number]
 
 /**
  * Strips common markdown formatting so summaries display as plain text.
@@ -32,6 +33,21 @@ function truncateText(value: string, maxLength: number) {
     lastSpaceIndex > Math.floor(maxLength * 0.6) ? lastSpaceIndex : maxLength
 
   return `${truncated.slice(0, cutoff).trimEnd()}...`
+}
+
+function clampPercent(value: number) {
+  return Math.max(0, Math.min(100, Math.round(value)))
+}
+
+function resolveRelevance(
+  extraction: JobExtraction | undefined,
+  result: TavilySingleResult,
+) {
+  if (typeof extraction?.relevance === 'number') {
+    return clampPercent(extraction.relevance)
+  }
+
+  return clampPercent(result.score * 100)
 }
 
 /**
@@ -87,20 +103,24 @@ export function tavilyResultsToJobs(
   const seenUrls = new Set<string>()
 
   return results
-    .filter((result) => {
+    .map((result, index) => ({
+      extraction: extractions?.[index],
+      originalIndex: index,
+      result,
+    }))
+    .filter(({ result }) => {
       if (seenUrls.has(result.url)) return false
       seenUrls.add(result.url)
       return true
     })
-    .slice(0, MAX_SAVED_JOB_RESULTS)
-    .map((result, index) => {
-      const extraction = extractions?.[index]
-
+    .map(({ extraction, originalIndex, result }) => {
       const title = cleanJobTitle(result.title) || result.title.trim()
       const company =
         extraction?.company ??
         extractCompanyFromTitle(result.title) ??
         sourceFromUrl(result.url)
+      const favicon = result.favicon?.trim()
+      const matchScore = clampPercent(result.score * 100)
       const summary =
         stripMarkdown(
           extraction?.summary ??
@@ -111,20 +131,38 @@ export function tavilyResultsToJobs(
         )
 
       return {
-        rank: index + 1,
+        matchScore,
+        originalIndex,
+        relevance: resolveRelevance(extraction, result),
         title,
         company,
         location: extraction?.location ?? ('Unspecified' as const),
         summary,
         url: result.url,
+        ...(favicon ? { favicon } : {}),
         source: extraction?.source ?? sourceFromUrl(result.url),
         category: extraction?.category ?? ('other' as const),
         workArrangement: 'unspecified' as const,
         employmentType: extraction?.employmentType ?? ('unspecified' as const),
         tags: extraction?.tags ?? ([] as string[]),
-        matchScore: Math.round(result.score * 100),
       }
     })
+    .sort((a, b) => {
+      if (b.relevance !== a.relevance) {
+        return b.relevance - a.relevance
+      }
+
+      if (b.matchScore !== a.matchScore) {
+        return b.matchScore - a.matchScore
+      }
+
+      return a.originalIndex - b.originalIndex
+    })
+    .slice(0, MAX_SAVED_JOB_RESULTS)
+    .map(({ originalIndex: _originalIndex, ...job }, index) => ({
+      ...job,
+      rank: index + 1,
+    }))
 }
 
 /**

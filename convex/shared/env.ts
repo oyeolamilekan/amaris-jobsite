@@ -1,3 +1,5 @@
+import { SearchStageError, serializeFailureDetails } from './failure'
+
 /**
  * Reads the Node.js environment object in a way that works inside the Convex
  * action runtime.
@@ -31,16 +33,48 @@ export function getRequiredEnv(name: string) {
   return value
 }
 
+export function assertAiGatewayConfigured() {
+  try {
+    getRequiredEnv('AI_GATEWAY_API_KEY')
+  } catch (error) {
+    throw new SearchStageError({
+      stage: 'runtime-config',
+      message:
+        'Search is not configured. Set AI_GATEWAY_API_KEY in the runtime environment.',
+      underlyingErrorName: error instanceof Error ? error.name : undefined,
+      details: serializeFailureDetails({
+        variable: 'AI_GATEWAY_API_KEY',
+        error: error instanceof Error ? error.message : String(error),
+      }),
+      cause: error,
+    })
+  }
+}
+
 /**
  * Collects the environment configuration required by the job-search actions.
  *
  * @returns The validated runtime configuration used by search actions.
  */
 export function getSearchRuntimeConfig() {
-  getRequiredEnv('AI_GATEWAY_API_KEY')
+  assertAiGatewayConfigured()
 
-  return {
-    tavilyApiKey: getRequiredEnv('TAVILY_API_KEY'),
+  try {
+    return {
+      tavilyApiKey: getRequiredEnv('TAVILY_API_KEY'),
+    }
+  } catch (error) {
+    throw new SearchStageError({
+      stage: 'runtime-config',
+      message:
+        'Search is not configured. Set TAVILY_API_KEY in the runtime environment.',
+      underlyingErrorName: error instanceof Error ? error.name : undefined,
+      details: serializeFailureDetails({
+        variable: 'TAVILY_API_KEY',
+        error: error instanceof Error ? error.message : String(error),
+      }),
+      cause: error,
+    })
   }
 }
 

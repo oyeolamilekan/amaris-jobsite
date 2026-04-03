@@ -20,6 +20,7 @@ const NULL_EXTRACTION: JobExtraction = {
   source: null,
   category: null,
   employmentType: null,
+  relevance: null,
   tags: null,
 }
 
@@ -32,6 +33,7 @@ type TavilySingleResult = TavilySearchResult['results'][number]
  */
 export async function extractJobDetails(
   result: TavilySingleResult,
+  userPrompt: string,
   modelId?: string,
 ): Promise<JobExtraction> {
   const content = result.rawContent ?? result.content
@@ -42,6 +44,8 @@ export async function extractJobDetails(
       maxOutputTokens: 1024,
       system: extractJobDetailsSystem,
       prompt: [
+        `User search prompt: ${userPrompt}`,
+        '',
         `Page title: ${result.title}`,
         `Page URL: ${result.url}`,
         '',
@@ -80,10 +84,11 @@ export async function extractJobDetails(
  */
 export async function extractAllJobDetails(
   results: TavilySearchResult['results'],
+  userPrompt: string,
   modelId?: string,
 ): Promise<JobExtraction[]> {
   const settled = await Promise.allSettled(
-    results.map((result) => extractJobDetails(result, modelId)),
+    results.map((result) => extractJobDetails(result, userPrompt, modelId)),
   )
 
   return settled.map((outcome) =>

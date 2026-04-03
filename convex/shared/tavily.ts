@@ -16,6 +16,7 @@ type TavilySearchResponse = {
     url: string
     content: string
     score: number
+    favicon?: string | null
     raw_content: string | null
   }>
   request_id: string
@@ -31,6 +32,7 @@ export type TavilySearchResult = {
     url: string
     content: string
     score: number
+    favicon: string | null
     rawContent: string | null
   }>
 }
@@ -84,7 +86,8 @@ export async function searchTavily(
       include_answer: false,
       include_images: false,
       include_raw_content: includeRawContent,
-      include_favicon: false,
+      include_favicon: true,
+      time_range: 'week',
       include_usage: false,
     }),
   })
@@ -128,6 +131,7 @@ export async function searchTavily(
       url: result.url,
       content: result.content,
       score: result.score,
+      favicon: result.favicon ?? null,
       rawContent: result.raw_content,
     })),
   } satisfies TavilySearchResult

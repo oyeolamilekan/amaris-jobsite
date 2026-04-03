@@ -28,11 +28,13 @@ export const structuredSearchJobSchema = z.object({
   location: z.string().min(1).default('Unspecified'),
   summary: z.string().min(1),
   url: z.string().url(),
+  favicon: z.string().min(1).optional(),
   source: z.string().min(1),
   category: z.enum(jobCategoryValues),
   workArrangement: z.enum(workArrangementValues).default('unspecified'),
   employmentType: z.enum(employmentTypeValues).default('unspecified'),
   matchScore: z.number().int().min(0).max(100).optional(),
+  relevance: z.number().int().min(0).max(100).optional(),
   tags: z.array(z.string().min(1)).max(MAX_TAG_COUNT).default([]),
   postedAt: z.string().min(1).optional(),
 })
@@ -128,6 +130,7 @@ export const jobExtractionSchema = z.object({
   source: z.string().nullable(),
   category: z.enum(jobCategoryValues).nullable(),
   employmentType: z.enum(employmentTypeValues).nullable(),
+  relevance: z.number().int().min(0).max(100).nullable(),
   tags: z.array(z.string()).max(MAX_TAG_COUNT).nullable(),
 })
 

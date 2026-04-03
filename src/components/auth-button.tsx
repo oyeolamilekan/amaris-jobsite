@@ -5,7 +5,7 @@ import { Button } from '~/components/ui/button'
 export function AuthButton() {
   return (
     <Button asChild variant="ghost" size="sm">
-      <Link to="/sign-in">
+      <Link search={{ redirect: undefined }} to="/sign-in">
         <LogIn data-icon="inline-start" />
         Sign in
       </Link>

@@ -222,6 +222,10 @@ It asks the model to produce:
 - structured job records
 - raw-result classifications
 
+Each job extraction now also includes a query-aware `relevance` score so the
+saved jobs can reflect how well the listing matches the user’s original prompt,
+separately from Tavily’s own retrieval score.
+
 The important implementation detail is that this pass does **not** trust the model output directly. It first accepts a looser schema and then normalizes into the stricter internal result shape. That makes the pipeline more resilient to imperfect model output.
 
 ### 8. Normalize raw results and jobs
@@ -263,6 +267,7 @@ This step:
 - normalizes summary text and enums
 - applies fallback values where needed
 - preserves `matchScore` when available
+- assigns a separate query-aware `relevance` field
 - attaches the matching raw result evidence by exact URL
 
 That final point is important: new runs do not save separate user-facing raw-result rows. Instead, matching raw evidence is embedded into each saved job as `job.rawResult`, which is then only surfaced in admin flows.

@@ -30,7 +30,7 @@ const navItems = [
     view: 'settings',
     icon: Settings,
   },
-]
+] as const
 
 export function AdminSidebar() {
   let currentView = 'searches'

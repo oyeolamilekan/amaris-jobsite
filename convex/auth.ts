@@ -6,6 +6,7 @@ import { components } from './_generated/api'
 import { query } from './_generated/server'
 import type { GenericCtx } from '@convex-dev/better-auth'
 import type { DataModel } from './_generated/dataModel'
+import type { Doc as BetterAuthDoc } from './betterAuth/_generated/dataModel'
 import type { BetterAuthOptions } from 'better-auth'
 
 const siteUrl = process.env.SITE_URL!
@@ -38,10 +39,34 @@ export const createAuth = (ctx: GenericCtx<DataModel>) => {
   return betterAuth(createAuthOptions(ctx))
 }
 
-// Example function for getting the current user
+export async function getCurrentUserOrNull(ctx: GenericCtx<DataModel>) {
+  const user = await authComponent.safeGetAuthUser(ctx)
+  return (user as BetterAuthDoc<'user'> | undefined) ?? null
+}
+
+export async function requireAuthenticatedUser(ctx: GenericCtx<DataModel>) {
+  const user = await getCurrentUserOrNull(ctx)
+
+  if (user === null) {
+    throw new Error('Not authenticated')
+  }
+
+  return user
+}
+
+export async function requireAdminUser(ctx: GenericCtx<DataModel>) {
+  const user = await requireAuthenticatedUser(ctx)
+
+  if (user.role !== 'admin') {
+    throw new Error('Unauthorized')
+  }
+
+  return user
+}
+
 export const getCurrentUser = query({
   args: {},
   handler: async (ctx) => {
-    return await authComponent.getAuthUser(ctx)
+    return await getCurrentUserOrNull(ctx)
   },
 })

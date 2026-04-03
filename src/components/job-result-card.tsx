@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import type { Doc } from '../../convex/_generated/dataModel'
 import { ArrowUpRight, Clock3, LoaderCircle, MapPin, Users } from 'lucide-react'
 import type { LinkedInPeopleJob } from '~/components/linkedin-people-dialog'
@@ -20,7 +21,9 @@ function formatLabel(value: string) {
 }
 
 type JobResultCardProps = {
-  job: Doc<'jobResults'>
+  job: Doc<'jobResults'> & {
+    favicon?: string
+  }
   isPeopleLoading: boolean
   onViewPeople: (job: LinkedInPeopleJob) => Promise<void> | void
 }
@@ -30,12 +33,34 @@ export function JobResultCard({
   isPeopleLoading,
   onViewPeople,
 }: JobResultCardProps) {
+  const [showFavicon, setShowFavicon] = useState(() => Boolean(job.favicon))
+
   return (
     <Card className="rounded-[1.5rem]">
       <CardHeader>
-        <div className="flex flex-col gap-1">
-          <CardTitle>{job.title}</CardTitle>
-          <CardDescription>{job.company}</CardDescription>
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <CardTitle>{job.title}</CardTitle>
+            <CardDescription className="mt-1 flex items-center gap-2">
+              {job.favicon && showFavicon ? (
+                <img
+                  alt=""
+                  aria-hidden="true"
+                  className="size-4 shrink-0 rounded-sm object-contain"
+                  loading="lazy"
+                  onError={() => {
+                    setShowFavicon(false)
+                  }}
+                  src={job.favicon}
+                />
+              ) : null}
+              <span className="truncate">{job.company}</span>
+            </CardDescription>
+          </div>
+
+          {job.rank === 1 ? (
+            <Badge className="w-fit shrink-0">Best match</Badge>
+          ) : null}
         </div>
       </CardHeader>
 

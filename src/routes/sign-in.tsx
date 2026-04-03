@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { authClient } from '~/lib/auth-client'
 import { ThemeToggle } from '~/components/theme-toggle'
@@ -10,7 +11,22 @@ import {
   CardTitle,
 } from '~/components/ui/card'
 
+function resolveSafeRedirect(value: unknown) {
+  if (
+    typeof value !== 'string' ||
+    !value.startsWith('/') ||
+    value.startsWith('//')
+  ) {
+    return undefined
+  }
+
+  return value
+}
+
 export const Route = createFileRoute('/sign-in')({
+  validateSearch: (search: Record<string, unknown>) => ({
+    redirect: resolveSafeRedirect(search.redirect),
+  }),
   component: SignInPage,
   head: () => ({
     meta: [
@@ -33,10 +49,23 @@ export const Route = createFileRoute('/sign-in')({
 
 function SignInPage() {
   const navigate = useNavigate()
+  const { redirect: redirectTo } = Route.useSearch()
   const { data: session, isPending } = authClient.useSession()
 
+  useEffect(() => {
+    if (isPending || !session) {
+      return
+    }
+
+    if (redirectTo) {
+      window.location.replace(redirectTo)
+      return
+    }
+
+    void navigate({ to: '/' })
+  }, [isPending, navigate, redirectTo, session])
+
   if (!isPending && session) {
-    navigate({ to: '/' })
     return null
   }
 
@@ -59,6 +88,7 @@ function SignInPage() {
             onClick={async () => {
               const result = await authClient.signIn.social({
                 provider: 'google',
+                callbackURL: redirectTo ?? '/',
               })
               if (result.error) {
                 console.error('[sign-in]', result.error)

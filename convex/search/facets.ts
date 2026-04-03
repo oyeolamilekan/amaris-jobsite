@@ -86,6 +86,30 @@ export async function generateSearchQuery(
   } catch (error) {
     if (error instanceof SearchStageError) throw error
 
+    if (error instanceof Error && error.name === 'GatewayAuthenticationError') {
+      const text = 'text' in error ? (error.text as string) : undefined
+
+      console.error('Search query generation could not authenticate with AI Gateway.', {
+        prompt,
+        error: error.message,
+        text,
+      })
+
+      throw new SearchStageError({
+        stage: 'runtime-config',
+        message:
+          'AI Gateway authentication failed. Check AI_GATEWAY_API_KEY in the runtime environment.',
+        underlyingErrorName: error.name,
+        responseText: text,
+        details: serializeFailureDetails({
+          error: error.message,
+          cause:
+            error.cause instanceof Error ? error.cause.message : error.cause,
+        }),
+        cause: error,
+      })
+    }
+
     if (
       NoObjectGeneratedError.isInstance(error) ||
       NoOutputGeneratedError.isInstance(error)

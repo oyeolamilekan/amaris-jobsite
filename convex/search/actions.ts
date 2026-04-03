@@ -4,6 +4,7 @@ import { v } from 'convex/values'
 import { internal } from '../_generated/api'
 import type { Id } from '../_generated/dataModel'
 import { action } from '../_generated/server'
+import { assertAiGatewayConfigured } from '../shared/env'
 import {
   NOT_JOB_SEARCH_SUMMARY,
   SearchStageError,
@@ -50,6 +51,9 @@ export const submitSearch = action({
     let tavilyQuery: string | undefined
 
     try {
+      stage = 'runtime-config'
+      assertAiGatewayConfigured()
+
       // 0. Read admin AI model setting
       const settings = await ctx.runQuery(
         internal.admin.settings.getSettingsInternal,
@@ -58,6 +62,7 @@ export const submitSearch = action({
       const modelId = settings.aiModel
 
       // 1. Classify intent + generate Tavily query (single LLM call)
+      stage = 'prompt-analysis'
       const result = await classifyAndBuildQuery(
         prompt,
         selectedProviders,
@@ -89,7 +94,7 @@ export const submitSearch = action({
       tavilyQuery = result.query
       stage = 'tavily-search'
       await reportProgress('searching')
-      const pipeline = await runJobSearchPipeline(tavilyQuery, modelId)
+      const pipeline = await runJobSearchPipeline(prompt, tavilyQuery, modelId)
 
       // 4. Persist completed results
       stage = 'search-persistence'
@@ -110,6 +115,8 @@ export const submitSearch = action({
       await reportProgress('completed', { searchId })
       return { searchId }
     } catch (error) {
+      console.log(error)
+
       await reportProgress('failed', {
         error: error instanceof Error ? error.message : 'Search failed',
       })

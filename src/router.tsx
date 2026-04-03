@@ -1,8 +1,9 @@
 import { createRouter } from '@tanstack/react-router'
 import { QueryClient, notifyManager } from '@tanstack/react-query'
 import { setupRouterSsrQueryIntegration } from '@tanstack/react-router-ssr-query'
+import { ConvexBetterAuthProvider } from '@convex-dev/better-auth/react'
 import { ConvexQueryClient } from '@convex-dev/react-query'
-import { ConvexProvider } from 'convex/react'
+import { authClient } from '~/lib/auth-client'
 import { routeTree } from './routeTree.gen'
 
 export function getRouter() {
@@ -34,9 +35,12 @@ export function getRouter() {
     defaultErrorComponent: (err) => <p>{err.error.stack}</p>,
     defaultNotFoundComponent: () => <p>not found</p>,
     Wrap: ({ children }) => (
-      <ConvexProvider client={convexQueryClient.convexClient}>
+      <ConvexBetterAuthProvider
+        authClient={authClient}
+        client={convexQueryClient.convexClient}
+      >
         {children}
-      </ConvexProvider>
+      </ConvexBetterAuthProvider>
     ),
   })
 

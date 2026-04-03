@@ -3,6 +3,7 @@ import { v } from 'convex/values'
 import type { Id } from '../_generated/dataModel'
 import type { QueryCtx } from '../_generated/server'
 import { internalMutation, query } from '../_generated/server'
+import { requireAdminUser } from '../auth'
 import {
   DEFAULT_ADMIN_SEARCH_LIMIT,
   MAX_ADMIN_SEARCH_LIMIT,
@@ -158,6 +159,7 @@ export const getAdminSearchRuns = query({
    * @returns One page of recent search runs with their saved job results.
    */
   handler: async (ctx, args) => {
+    await requireAdminUser(ctx)
     const paginationOpts = {
       ...args.paginationOpts,
       numItems: resolveAdminSearchLimit(args.paginationOpts.numItems),
@@ -191,6 +193,7 @@ export const getAdminSearchStats = query({
     sinceTimestamp: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
+    await requireAdminUser(ctx)
     const docs = await queryAdminSearchRunsByCreatedAt(
       ctx,
       args.sinceTimestamp,
