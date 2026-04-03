@@ -5,8 +5,9 @@ import { useAction, useMutation } from 'convex/react'
 import { ChevronLeft, Search } from 'lucide-react'
 import { api } from '../../convex/_generated/api'
 import type { Id } from '../../convex/_generated/dataModel'
+import { MAX_SELECTED_PROVIDERS } from '../../convex/shared/constants'
 import { SearchLoadingScreen } from '~/components/search-loading-screen'
-import { ProviderFilter, allProviders, defaultProviders } from '~/components/provider-filter'
+import { ProviderFilter, defaultProviders } from '~/components/provider-filter'
 import { ThemeToggle } from '~/components/theme-toggle'
 import { AuthButton } from '~/components/auth-button'
 import { Badge } from '~/components/ui/badge'
@@ -123,11 +124,11 @@ function ResultsSearchForm({ initialQuery }: ResultsSearchFormProps) {
                 selected={selectedProviders}
                 onChange={setSelectedProviders}
               />
-              {selectedProviders.length < allProviders.length ? (
-                <span className="text-xs text-muted-foreground">
-                  Click to add more sites
-                </span>
-              ) : null}
+              <span className="text-xs text-muted-foreground">
+                {selectedProviders.length === MAX_SELECTED_PROVIDERS
+                  ? `Maximum ${MAX_SELECTED_PROVIDERS} job boards selected`
+                  : `Select up to ${MAX_SELECTED_PROVIDERS} job boards`}
+              </span>
               <Button
                 className="rounded-full"
                 disabled={isSubmitting}

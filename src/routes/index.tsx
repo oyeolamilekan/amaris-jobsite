@@ -11,49 +11,141 @@ import {
   allProviders,
   defaultProviders,
 } from '~/components/provider-filter'
+import {
+  MAX_SELECTED_PROVIDERS,
+  providerLabels,
+} from '../../convex/shared/constants'
+import { Badge } from '~/components/ui/badge'
 import { Button } from '~/components/ui/button'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+} from '~/components/ui/card'
 import { Textarea } from '~/components/ui/textarea'
 import { ThemeToggle } from '~/components/theme-toggle'
 import { AuthButton } from '~/components/auth-button'
+import {
+  HOME_URL,
+  LOGO_URL,
+  OG_IMAGE_ALT,
+  OG_IMAGE_HEIGHT,
+  OG_IMAGE_URL,
+  OG_IMAGE_WIDTH,
+  SITE_DESCRIPTION,
+  SITE_NAME,
+  SITE_TITLE,
+} from '~/lib/seo'
+
+const providerNames = allProviders.map(
+  (provider) => providerLabels[provider] ?? provider,
+)
+
+const seoHighlights = [
+  {
+    title: 'Search top job boards fast',
+    description:
+      'Run one prompt across multiple ATS and job-board providers without manually checking each careers page.',
+  },
+  {
+    title: 'Get ranked job matches',
+    description:
+      'Amaris evaluates each result against your query so the best-fit roles surface first instead of raw search order.',
+  },
+  {
+    title: 'Research the company next',
+    description:
+      'Open the original role page, review the saved summary, and jump into LinkedIn people results for the company.',
+  },
+] as const
+
+const seoFaqItems = [
+  {
+    question: 'How does Amaris find jobs?',
+    answer:
+      'Amaris turns your prompt into a targeted live web search, retrieves listings from supported ATS and job-board providers, and ranks the saved jobs by relevance.',
+  },
+  {
+    question: 'Which job sites does Amaris support?',
+    answer: `Amaris supports providers such as ${providerNames
+      .slice(0, 6)
+      .join(', ')}, plus other approved ATS platforms.`,
+  },
+  {
+    question: 'What search prompts work best?',
+    answer:
+      'Include the role title, location, seniority, remote preference, stack, and must-have skills so Amaris can find and rank stronger matches.',
+  },
+] as const
 
 export const Route = createFileRoute('/')({
   component: HomePage,
   head: () => ({
     meta: [
-      { title: 'Amaris — Find Your Next Role with AI-Powered Job Search' },
-      {
-        name: 'description',
-        content:
-          'Describe your ideal role and Amaris searches top job boards in real time. AI-powered matching across LinkedIn, Indeed, Glassdoor and more.',
-      },
-      {
-        property: 'og:title',
-        content: 'Amaris — Find Your Next Role with AI-Powered Job Search',
-      },
-      {
-        property: 'og:description',
-        content:
-          'Describe your ideal role and Amaris searches top job boards in real time. AI-powered matching across LinkedIn, Indeed, Glassdoor and more.',
-      },
+      { title: SITE_TITLE },
+      { name: 'description', content: SITE_DESCRIPTION },
+      { property: 'og:title', content: SITE_TITLE },
+      { property: 'og:description', content: SITE_DESCRIPTION },
       { property: 'og:type', content: 'website' },
+      { property: 'og:url', content: HOME_URL },
+      { property: 'og:image', content: OG_IMAGE_URL },
+      { property: 'og:image:type', content: 'image/png' },
+      { property: 'og:image:width', content: `${OG_IMAGE_WIDTH}` },
+      { property: 'og:image:height', content: `${OG_IMAGE_HEIGHT}` },
+      { property: 'og:image:alt', content: OG_IMAGE_ALT },
+      { name: 'twitter:card', content: 'summary_large_image' },
+      { name: 'twitter:title', content: SITE_TITLE },
+      { name: 'twitter:description', content: SITE_DESCRIPTION },
+      { name: 'twitter:image', content: OG_IMAGE_URL },
+      { name: 'twitter:image:alt', content: OG_IMAGE_ALT },
     ],
+    links: [{ rel: 'canonical', href: HOME_URL }],
     scripts: [
       {
         type: 'application/ld+json',
         children: JSON.stringify({
           '@context': 'https://schema.org',
-          '@type': 'WebSite',
-          name: 'Amaris',
-          description:
-            'AI-powered job search that aggregates results from top job boards in real time.',
-          potentialAction: {
-            '@type': 'SearchAction',
-            target: {
-              '@type': 'EntryPoint',
-              urlTemplate: '{search_term_string}',
+          '@graph': [
+            {
+              '@type': 'Organization',
+              name: SITE_NAME,
+              url: HOME_URL,
+              logo: LOGO_URL,
             },
-            'query-input': 'required name=search_term_string',
-          },
+            {
+              '@type': 'WebSite',
+              name: SITE_NAME,
+              url: HOME_URL,
+              description: SITE_DESCRIPTION,
+              inLanguage: 'en-US',
+              image: OG_IMAGE_URL,
+            },
+            {
+              '@type': 'WebApplication',
+              name: SITE_NAME,
+              url: HOME_URL,
+              image: OG_IMAGE_URL,
+              screenshot: OG_IMAGE_URL,
+              description: SITE_DESCRIPTION,
+              applicationCategory: 'BusinessApplication',
+              operatingSystem: 'Any',
+              browserRequirements:
+                'Requires JavaScript and works in modern desktop and mobile browsers.',
+              featureList: seoHighlights.map((item) => item.title),
+            },
+            {
+              '@type': 'FAQPage',
+              mainEntity: seoFaqItems.map((item) => ({
+                '@type': 'Question',
+                name: item.question,
+                acceptedAnswer: {
+                  '@type': 'Answer',
+                  text: item.answer,
+                },
+              })),
+            },
+          ],
         }),
       },
     ],
@@ -122,61 +214,61 @@ function HomePage() {
         <AuthButton />
       </div>
 
-      <div className="flex w-full max-w-2xl flex-col items-center gap-8">
-        <div className="flex flex-col items-center gap-3 text-center">
-          <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
-            Amaris
-          </h1>
-          <p className="max-w-md text-base text-muted-foreground">
-            Describe your ideal role and we&apos;ll search top job boards in
-            real time.
-          </p>
-        </div>
-
-        <form
-          className="flex w-full flex-col gap-4"
-          onSubmit={handleSubmit}
-        >
-          <Textarea
-            className="min-h-28 resize-none rounded-2xl px-4 py-3 text-base"
-            disabled={isSubmitting}
-            maxLength={200}
-            onChange={(event) => {
-              setQuery(event.target.value)
-              if (submitError) setSubmitError(null)
-            }}
-            placeholder='e.g. "Senior backend engineer, remote, Python or Go, Europe"'
-            value={query}
-          />
-
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              <ProviderFilter
-                selected={selectedProviders}
-                onChange={setSelectedProviders}
-              />
-              {selectedProviders.length < allProviders.length ? (
-                <span className="text-xs text-muted-foreground">
-                  Click to add more job sites
-                </span>
-              ) : null}
-            </div>
-
-            <Button
-              className="rounded-full"
-              disabled={isSubmitting}
-              size="lg"
-              type="submit"
-            >
-              <Search data-icon="inline-start" />
-              Search
-            </Button>
+      <div className="flex w-full max-w-5xl flex-col items-center gap-14">
+        <section className="flex w-full max-w-2xl flex-col items-center gap-8">
+          <div className="flex flex-col items-center gap-3 text-center">
+            <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
+              Amaris
+            </h1>
+            <p className="max-w-xl text-base text-muted-foreground">
+              AI-powered job search across top ATS and job-board providers. Tell
+              Amaris the role, location, seniority, and stack you want, then get
+              ranked matches in real time.
+            </p>
           </div>
 
-          {submitError ? (
-            <p className="text-sm text-destructive">{submitError}</p>
-          ) : null}
-        </form>
+          <form className="flex w-full flex-col gap-4" onSubmit={handleSubmit}>
+            <Textarea
+              className="min-h-28 resize-none rounded-2xl px-4 py-3 text-base"
+              disabled={isSubmitting}
+              maxLength={200}
+              onChange={(event) => {
+                setQuery(event.target.value)
+                if (submitError) setSubmitError(null)
+              }}
+              placeholder='e.g. "Senior backend engineer, remote, Python or Go, Europe"'
+              value={query}
+            />
+
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <ProviderFilter
+                  selected={selectedProviders}
+                  onChange={setSelectedProviders}
+                />
+                <span className="text-xs text-muted-foreground">
+                  {selectedProviders.length === MAX_SELECTED_PROVIDERS
+                    ? `Maximum ${MAX_SELECTED_PROVIDERS} job boards selected`
+                    : `Select up to ${MAX_SELECTED_PROVIDERS} job boards`}
+                </span>
+              </div>
+
+              <Button
+                className="rounded-full"
+                disabled={isSubmitting}
+                size="lg"
+                type="submit"
+              >
+                <Search data-icon="inline-start" />
+                Search
+              </Button>
+            </div>
+
+            {submitError ? (
+              <p className="text-sm text-destructive">{submitError}</p>
+            ) : null}
+          </form>
+        </section>
       </div>
 
       {isSubmitting && progressId ? (

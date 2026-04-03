@@ -11,10 +11,15 @@ import appCss from '~/styles/app.css?url'
 import { ThemeProvider, themeInitScript } from '~/lib/theme'
 import { TooltipProvider } from '~/components/ui/tooltip'
 import { Analytics } from '@vercel/analytics/react'
-
-const SITE_NAME = 'Amaris'
-const SITE_DESCRIPTION =
-  'Search across top job boards in real time. Describe your ideal role and let AI find the best matches for you.'
+import {
+  OG_IMAGE_ALT,
+  OG_IMAGE_HEIGHT,
+  OG_IMAGE_URL,
+  OG_IMAGE_WIDTH,
+  SITE_DESCRIPTION,
+  SITE_NAME,
+  SITE_TITLE,
+} from '~/lib/seo'
 
 export const Route = createRootRouteWithContext<{
   queryClient: QueryClient
@@ -24,23 +29,29 @@ export const Route = createRootRouteWithContext<{
     meta: [
       { charSet: 'utf-8' },
       { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-      { title: `${SITE_NAME} — AI-Powered Job Search` },
+      { title: SITE_TITLE },
       { name: 'description', content: SITE_DESCRIPTION },
+      { name: 'application-name', content: SITE_NAME },
+      { name: 'apple-mobile-web-app-title', content: SITE_NAME },
 
       // Open Graph
       { property: 'og:type', content: 'website' },
       { property: 'og:site_name', content: SITE_NAME },
-      { property: 'og:title', content: `${SITE_NAME} — AI-Powered Job Search` },
+      { property: 'og:title', content: SITE_TITLE },
       { property: 'og:description', content: SITE_DESCRIPTION },
       { property: 'og:locale', content: 'en_US' },
+      { property: 'og:image', content: OG_IMAGE_URL },
+      { property: 'og:image:type', content: 'image/png' },
+      { property: 'og:image:width', content: `${OG_IMAGE_WIDTH}` },
+      { property: 'og:image:height', content: `${OG_IMAGE_HEIGHT}` },
+      { property: 'og:image:alt', content: OG_IMAGE_ALT },
 
       // Twitter Card
       { name: 'twitter:card', content: 'summary_large_image' },
-      {
-        name: 'twitter:title',
-        content: `${SITE_NAME} — AI-Powered Job Search`,
-      },
+      { name: 'twitter:title', content: SITE_TITLE },
       { name: 'twitter:description', content: SITE_DESCRIPTION },
+      { name: 'twitter:image', content: OG_IMAGE_URL },
+      { name: 'twitter:image:alt', content: OG_IMAGE_ALT },
 
       // Theme & mobile
       { name: 'theme-color', content: '#09090b' },
@@ -60,6 +71,11 @@ export const Route = createRootRouteWithContext<{
       {
         rel: 'icon',
         type: 'image/png',
+        href: '/favicon.png',
+      },
+      {
+        rel: 'icon',
+        type: 'image/png',
         sizes: '32x32',
         href: '/favicon-32x32.png',
       },
@@ -69,8 +85,8 @@ export const Route = createRootRouteWithContext<{
         sizes: '16x16',
         href: '/favicon-16x16.png',
       },
+      { rel: 'shortcut icon', type: 'image/png', href: '/favicon.png' },
       { rel: 'manifest', href: '/site.webmanifest' },
-      { rel: 'icon', href: '/favicon.ico' },
     ],
   }),
   notFoundComponent: NotFound,

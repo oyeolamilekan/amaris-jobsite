@@ -4,6 +4,12 @@ import { v } from 'convex/values'
 import { internal } from '../_generated/api'
 import type { Id } from '../_generated/dataModel'
 import { action } from '../_generated/server'
+import {
+  approvedJobHostFamilies,
+  defaultProviders,
+  MAX_SELECTED_PROVIDERS,
+  type SearchProgressStage,
+} from '../shared/constants'
 import { assertAiGatewayConfigured } from '../shared/env'
 import {
   NOT_JOB_SEARCH_SUMMARY,
@@ -15,7 +21,32 @@ import {
   persistFailedSearch,
   runJobSearchPipeline,
 } from './pipeline'
-import type { SearchProgressStage } from '../shared/constants'
+
+const approvedProviderSet = new Set(
+  approvedJobHostFamilies.map((family) => family.provider),
+)
+
+function resolveSelectedProviders(selectedProviders?: string[]) {
+  if (!selectedProviders || selectedProviders.length === 0) {
+    return [...defaultProviders]
+  }
+
+  const uniqueSelectedProviders = Array.from(new Set(selectedProviders))
+
+  if (uniqueSelectedProviders.length > MAX_SELECTED_PROVIDERS) {
+    throw new Error(`You can select up to ${MAX_SELECTED_PROVIDERS} job boards.`)
+  }
+
+  const invalidProvider = uniqueSelectedProviders.find(
+    (provider) => !approvedProviderSet.has(provider),
+  )
+
+  if (invalidProvider) {
+    throw new Error('Unsupported job board selection.')
+  }
+
+  return uniqueSelectedProviders
+}
 
 /**
  * Main action entrypoint for a user-submitted search. Classifies the prompt
@@ -32,7 +63,8 @@ export const submitSearch = action({
     const prompt = args.prompt.trim()
     if (!prompt) throw new Error('Please enter a search prompt.')
 
-    const { progressId, selectedProviders } = args
+    const { progressId } = args
+    const selectedProviders = resolveSelectedProviders(args.selectedProviders)
 
     async function reportProgress(
       stage: SearchProgressStage,

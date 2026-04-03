@@ -290,6 +290,11 @@ export const approvedJobSearchHosts = approvedJobHostFamilies.map(
 )
 
 /**
+ * Maximum number of job-board providers a user can target in a single search.
+ */
+export const MAX_SELECTED_PROVIDERS = 5
+
+/**
  * Top 5 ATS providers used as the default selection when no filter is applied.
  * Keeps the site clause short (~80 chars) so the LLM has plenty of room for
  * search terms within Tavily's 400-char query limit.

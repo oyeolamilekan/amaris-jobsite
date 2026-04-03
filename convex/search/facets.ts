@@ -6,12 +6,14 @@ import {
 } from 'ai'
 import {
   approvedJobHostFamilies,
-  approvedJobSearchHosts,
+  defaultProviders,
 } from '../shared/constants'
 import { SearchStageError, serializeFailureDetails } from '../shared/failure'
 import { getJobSearchModel } from '../shared/model'
 import { generateSearchQuerySystem } from '../shared/prompts'
 import { searchQuerySchema } from '../shared/schemas'
+
+const defaultProviderSet = new Set<string>(defaultProviders)
 
 /**
  * Builds the site clause from either the selected providers or the full host
@@ -23,7 +25,9 @@ function buildSiteClause(selectedProviders?: string[]) {
       ? approvedJobHostFamilies
           .filter((f) => selectedProviders.includes(f.provider))
           .map((f) => f.queryHost)
-      : approvedJobSearchHosts
+      : approvedJobHostFamilies
+          .filter((f) => defaultProviderSet.has(f.provider))
+          .map((f) => f.queryHost)
 
   if (hosts.length === 1) return `site:${hosts[0]}`
   return `(${hosts.map((host) => `site:${host}`).join(' OR ')})`
