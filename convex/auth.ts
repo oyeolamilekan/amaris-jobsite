@@ -14,11 +14,30 @@ const siteUrl = process.env.SITE_URL!
 // The component client has methods needed for integrating Convex with Better Auth,
 // as well as helper methods for general use.
 export const authComponent = createClient<DataModel>(components.betterAuth)
+const DEFAULT_USER_ROLE = 'standard' as const
 
 export const createAuthOptions = (ctx: GenericCtx<DataModel>) => {
   return {
     baseURL: siteUrl,
     database: authComponent.adapter(ctx),
+    databaseHooks: {
+      user: {
+        create: {
+          async before(user) {
+            if ('role' in user && typeof user.role === 'string' && user.role.length > 0) {
+              return
+            }
+
+            return {
+              data: {
+                ...user,
+                role: DEFAULT_USER_ROLE,
+              },
+            }
+          },
+        },
+      },
+    },
     session: {
       cookieCache: {
         enabled: true,
