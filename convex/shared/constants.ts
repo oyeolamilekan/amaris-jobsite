@@ -149,7 +149,7 @@ export const DEFAULT_LINKEDIN_PEOPLE_SEARCH_DEPTH = 'basic' as const
 /**
  * Default Tavily result count for LinkedIn people lookups.
  */
-export const DEFAULT_LINKEDIN_PEOPLE_MAX_RESULTS = 8
+export const DEFAULT_LINKEDIN_PEOPLE_MAX_RESULTS = 10
 
 /**
  * Maximum length for the company term in a LinkedIn people search query.
@@ -162,13 +162,14 @@ export const LINKEDIN_COMPANY_TERM_MAX_LENGTH = 60
 export const LINKEDIN_ROLE_TERM_MAX_LENGTH = 50
 
 /**
- * Default people-oriented terms that bias LinkedIn lookups toward useful
- * contacts.
+ * Recruiter-focused terms that bias LinkedIn people lookups toward likely
+ * hiring contacts.
  */
 export const LINKEDIN_PEOPLE_PRIORITY_TERMS = [
-  'recruiter',
+  'technical recruiter',
+  'engineering recruiter',
   'talent acquisition',
-  'hiring manager',
+  'talent partner',
 ] as const
 
 /**

@@ -32,28 +32,44 @@ function shorten(value: string, maxLength: number) {
 
 /**
  * Builds a deterministic LinkedIn people lookup query for a company, focused
- * on priority terms like recruiter and hiring manager.
+ * on recruiter profiles and optional location biasing.
  *
  * @param input - The company context for the lookup.
  * @param input.company - The company name attached to the job result.
+ * @param input.location - Optional job location used to bias the query.
  * @returns A LinkedIn-focused Tavily query string.
  */
 export function buildLinkedInPeopleSearchQuery({
   company,
+  location,
 }: {
   company: string
+  location?: string
 }) {
   const companyTerm = shorten(
     sanitizeQueryTerm(company),
     LINKEDIN_COMPANY_TERM_MAX_LENGTH,
   )
-  const peopleClauses = LINKEDIN_PEOPLE_PRIORITY_TERMS.map(
+  const recruiterClauses = LINKEDIN_PEOPLE_PRIORITY_TERMS.map(
     (term) => `"${term}"`,
   ).join(' OR ')
+  const companyContext = [
+    `"${companyTerm}"`,
+    `("at ${companyTerm}" OR "@ ${companyTerm}")`,
+  ].join(' AND ')
+  const locationTerm = location ? sanitizeQueryTerm(location) : ''
+  const locationClause = locationTerm
+    ? `("${locationTerm}" OR "EU" OR "Europe") -India -Bangalore -USA`
+    : ''
+  const exclusionClause = ['-jobs', '-hiring', '-intern'].join(' ')
 
   return [
-    '(site:linkedin.com/in OR site:linkedin.com/pub)',
-    `"${companyTerm}"`,
-    `(${peopleClauses})`,
-  ].join(' AND ')
+    'site:linkedin.com/in',
+    companyContext,
+    `(${recruiterClauses})`,
+    locationClause,
+    exclusionClause,
+  ]
+    .filter(Boolean)
+    .join(' AND ')
 }

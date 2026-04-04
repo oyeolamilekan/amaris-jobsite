@@ -53,11 +53,13 @@ export async function searchTavily(
     searchDepth?: 'basic' | 'advanced'
     maxResults?: number
     includeRawContent?: boolean
+    timeRange?: 'day' | 'week' | 'month' | 'year'
   },
 ) {
   const searchDepth = options?.searchDepth ?? DEFAULT_TAVILY_SEARCH_DEPTH
   const maxResults = options?.maxResults ?? DEFAULT_TAVILY_MAX_RESULTS
   const includeRawContent = options?.includeRawContent ?? false
+  const timeRange = options?.timeRange
 
   if (query.length > MAX_TAVILY_QUERY_LENGTH) {
     throw new SearchStageError({
@@ -87,7 +89,7 @@ export async function searchTavily(
       include_images: false,
       include_raw_content: includeRawContent,
       include_favicon: true,
-      time_range: 'week',
+      ...(timeRange ? { time_range: timeRange } : {}),
       include_usage: false,
     }),
   })
@@ -147,5 +149,6 @@ export async function searchTavily(
 export async function searchTavilyJobs(apiKey: string, query: string) {
   return await searchTavily(apiKey, query, {
     includeRawContent: true,
+    timeRange: 'week',
   })
 }

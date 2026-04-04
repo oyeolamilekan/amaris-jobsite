@@ -47,7 +47,10 @@ export const ensureLinkedInPeopleForJob = action({
     const { tavilyApiKey } = getSearchRuntimeConfig()
     const query = buildLinkedInPeopleSearchQuery({
       company: job.company,
+      location: job.location,
     })
+
+    console.log(query)
 
     const searchId: Id<'linkedinPeopleSearches'> = await ctx.runMutation(
       internal.linkedin.queries.saveLinkedInPeopleSearch,
