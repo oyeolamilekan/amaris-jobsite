@@ -272,6 +272,7 @@ export const providerLabels: Record<string, string> = {
   factorialhr: 'Factorial',
   'jobs.ashbyhq.com': 'Ashby',
   notion: 'Notion',
+  join: 'JOIN',
 }
 
 /**
@@ -292,12 +293,12 @@ export const approvedJobSearchHosts = approvedJobHostFamilies.map(
 /**
  * Maximum number of job-board providers a user can target in a single search.
  */
-export const MAX_SELECTED_PROVIDERS = 5
+export const MAX_SELECTED_PROVIDERS = 8
 
 /**
- * Top 5 ATS providers used as the default selection when no filter is applied.
- * Keeps the site clause short (~80 chars) so the LLM has plenty of room for
- * search terms within Tavily's 400-char query limit.
+ * Default provider selection used when no filter is applied. Keep this list in
+ * sync with `MAX_SELECTED_PROVIDERS` so the initial and reset states always
+ * stay valid.
  */
 export const defaultProviders = [
   'greenhouse',
@@ -305,19 +306,42 @@ export const defaultProviders = [
   'workday',
   'jobs.ashbyhq.com',
   'smartrecruiters',
+  'bamboohr',
+  'jobvite',
+  'icims',
 ] as const
 
 /**
  * Well-known AI Gateway model identifiers available for selection.
  */
 export const AVAILABLE_AI_MODELS = [
-  { id: 'google/gemini-2.0-flash', label: 'Gemini 2.0 Flash', provider: 'Google' },
-  { id: 'google/gemini-2.5-flash-preview-05-20', label: 'Gemini 2.5 Flash Preview', provider: 'Google' },
-  { id: 'google/gemini-2.5-pro-preview-05-06', label: 'Gemini 2.5 Pro Preview', provider: 'Google' },
+  {
+    id: 'google/gemini-2.0-flash',
+    label: 'Gemini 2.0 Flash',
+    provider: 'Google',
+  },
+  {
+    id: 'google/gemini-2.5-flash-preview-05-20',
+    label: 'Gemini 2.5 Flash Preview',
+    provider: 'Google',
+  },
+  {
+    id: 'google/gemini-2.5-pro-preview-05-06',
+    label: 'Gemini 2.5 Pro Preview',
+    provider: 'Google',
+  },
   { id: 'openai/gpt-4o', label: 'GPT-4o', provider: 'OpenAI' },
   { id: 'openai/gpt-4o-mini', label: 'GPT-4o Mini', provider: 'OpenAI' },
   { id: 'openai/gpt-4.1', label: 'GPT-4.1', provider: 'OpenAI' },
   { id: 'openai/gpt-4.1-mini', label: 'GPT-4.1 Mini', provider: 'OpenAI' },
-  { id: 'anthropic/claude-sonnet-4-20250514', label: 'Claude Sonnet 4', provider: 'Anthropic' },
-  { id: 'anthropic/claude-3.5-haiku-20241022', label: 'Claude 3.5 Haiku', provider: 'Anthropic' },
+  {
+    id: 'anthropic/claude-sonnet-4-20250514',
+    label: 'Claude Sonnet 4',
+    provider: 'Anthropic',
+  },
+  {
+    id: 'anthropic/claude-3.5-haiku-20241022',
+    label: 'Claude 3.5 Haiku',
+    provider: 'Anthropic',
+  },
 ] as const
