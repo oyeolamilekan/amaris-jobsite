@@ -23,6 +23,22 @@ function resolveSafeRedirect(value: unknown) {
   return value
 }
 
+function buildPostAuthCallbackUrl(redirectPath?: string) {
+  const callbackPath = '/sign-in'
+
+  if (typeof window === 'undefined') {
+    return callbackPath
+  }
+
+  const url = new URL(callbackPath, window.location.origin)
+
+  if (redirectPath) {
+    url.searchParams.set('redirect', redirectPath)
+  }
+
+  return url.toString()
+}
+
 export const Route = createFileRoute('/sign-in')({
   validateSearch: (search: Record<string, unknown>) => ({
     redirect: resolveSafeRedirect(search.redirect),
@@ -88,10 +104,9 @@ function SignInPage() {
             onClick={async () => {
               const result = await authClient.signIn.social({
                 provider: 'google',
-                callbackURL: redirectTo ?? '/',
+                callbackURL: buildPostAuthCallbackUrl(redirectTo),
               })
 
-              console.log(redirectTo)
               if (result.error) {
                 console.error('[sign-in]', result.error)
               }
