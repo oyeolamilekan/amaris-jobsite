@@ -104,7 +104,6 @@ function SignInPage() {
             onClick={async () => {
               const result = await authClient.signIn.social({
                 provider: 'google',
-                callbackURL: buildPostAuthCallbackUrl(redirectTo),
               })
 
               console.log(buildPostAuthCallbackUrl(redirectTo))
