@@ -90,6 +90,8 @@ function SignInPage() {
                 provider: 'google',
                 callbackURL: redirectTo ?? '/',
               })
+
+              console.log(redirectTo)
               if (result.error) {
                 console.error('[sign-in]', result.error)
               }
