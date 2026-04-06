@@ -107,6 +107,8 @@ function SignInPage() {
                 callbackURL: buildPostAuthCallbackUrl(redirectTo),
               })
 
+              console.log(buildPostAuthCallbackUrl(redirectTo))
+
               if (result.error) {
                 console.error('[sign-in]', result.error)
               }
