@@ -284,6 +284,8 @@ export const providerLabels: Record<string, string> = {
   'jobs.ashbyhq.com': 'Ashby',
   notion: 'Notion',
   join: 'JOIN',
+  pinpointhq: 'Pinpoint',
+  zohorecruit: 'Zoho Recruit',
 }
 
 /**
