@@ -254,6 +254,16 @@ export const approvedJobHostFamilies = [
     queryHost: 'join.com',
     hosts: ['join.com'],
   },
+  {
+    provider: 'pinpointhq',
+    queryHost: 'pinpointhq.com',
+    hosts: ['pinpointhq.com'],
+  },
+  {
+    provider: 'zohorecruit',
+    queryHost: 'zohorecruit.com',
+    hosts: ['zohorecruit.com'],
+  },
 ] satisfies readonly ApprovedJobHostFamily[]
 
 /**
