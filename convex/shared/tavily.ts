@@ -43,7 +43,7 @@ export type TavilySearchResult = {
  *
  * @param apiKey - The Tavily API key used for authentication.
  * @param query - The already-normalized query string to execute.
- * @param options - Optional search-depth and result-count overrides.
+ * @param options - Optional search-depth, domain, and result-count overrides.
  * @returns A normalized Tavily result payload.
  */
 export async function searchTavily(
@@ -54,12 +54,14 @@ export async function searchTavily(
     maxResults?: number
     includeRawContent?: boolean
     timeRange?: 'day' | 'week' | 'month' | 'year'
+    includeDomains?: readonly string[]
   },
 ) {
   const searchDepth = options?.searchDepth ?? DEFAULT_TAVILY_SEARCH_DEPTH
   const maxResults = options?.maxResults ?? DEFAULT_TAVILY_MAX_RESULTS
   const includeRawContent = options?.includeRawContent ?? false
   const timeRange = options?.timeRange
+  const includeDomains = options?.includeDomains
 
   if (query.length > MAX_TAVILY_QUERY_LENGTH) {
     throw new SearchStageError({
@@ -87,9 +89,12 @@ export async function searchTavily(
       max_results: maxResults,
       include_answer: false,
       include_images: false,
-      include_raw_content: includeRawContent,
+      include_raw_content: 'text',
       include_favicon: true,
       ...(timeRange ? { time_range: timeRange } : {}),
+      ...(includeDomains && includeDomains.length > 0
+        ? { include_domains: includeDomains }
+        : {}),
       include_usage: false,
     }),
   })
@@ -143,12 +148,19 @@ export async function searchTavily(
  * Convenience wrapper for the default Tavily job-search configuration.
  *
  * @param apiKey - The Tavily API key used for authentication.
- * @param query - The final host-constrained job-search query.
+ * @param query - The final job-search query.
  * @returns A normalized Tavily result payload using the default job settings.
  */
-export async function searchTavilyJobs(apiKey: string, query: string) {
+export async function searchTavilyJobs(
+  apiKey: string,
+  query: string,
+  options?: {
+    includeDomains?: readonly string[]
+  },
+) {
   return await searchTavily(apiKey, query, {
     includeRawContent: true,
     timeRange: 'week',
+    includeDomains: options?.includeDomains,
   })
 }

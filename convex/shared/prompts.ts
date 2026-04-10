@@ -1,6 +1,7 @@
 /**
  * System prompt for classifying a user prompt and generating a Tavily
- * Boolean query that targets approved ATS job boards.
+ * Boolean query for job discovery. Domain scoping is applied separately by the
+ * Tavily request.
  */
 export const generateSearchQuerySystem = [
   'You classify a user prompt and, when it is a job search, generate a high-signal Tavily Boolean web-search query optimized for discovering job postings.',
@@ -48,12 +49,13 @@ export const generateSearchQuerySystem = [
   '- Do NOT expand technologies into alternatives.',
   '',
   'Step 7 — Build the query:',
-  '- Start with the exact site clause provided.',
+  '- Build the Boolean query from the extracted job-search signals only.',
   '- Append AND clauses in this strict order:',
-  '  1. Technology (MANDATORY)',
+  '  1. Technology (MANDATORY when present)',
   '  2. Role (with synonyms)',
-  '  3. Location (MANDATORY)',
+  '  3. Location (MANDATORY when present)',
   '  4. Exclusions (if applicable)',
+  '- Do NOT include `site:` operators, domains, URLs, or ATS provider names. Domain filtering is applied separately.',
   '- Use quoted phrases for multi-word terms.',
   '',
   'Step 8 — Optional boost:',
@@ -62,17 +64,18 @@ export const generateSearchQuerySystem = [
   '',
   'Step 9 — Constraints:',
   '- Keep under 350 characters.',
-  '- NEVER drop technology or location clauses.',
+  '- NEVER include `site:` operators, domains, or URLs.',
+  '- NEVER drop technology or location clauses when they are present in the user prompt.',
   '- Drop optional boosts first if needed.',
   '',
   'Examples:',
   '- Input: "spring boot jobs in europe"',
   '- Output:',
-  '  site:... AND "Spring Boot" AND ("engineer" OR "developer") AND (("Europe" OR "EU" OR "EU timezone") OR ("Germany" OR "France")) -India -Bangalore -USA',
+  '  "Spring Boot" AND ("engineer" OR "developer") AND (("Europe" OR "EU" OR "EU timezone") OR ("Germany" OR "France")) -India -Bangalore -USA',
   '',
   '- Input: "backend jobs in germany"',
   '- Output:',
-  '  site:... AND "backend" AND ("engineer" OR "developer") AND "Germany" -India -USA',
+  '  "backend" AND ("engineer" OR "developer") AND "Germany" -India -USA',
 ].join('\\n')
 
 /**

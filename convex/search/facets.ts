@@ -4,34 +4,10 @@ import {
   Output,
   generateText,
 } from 'ai'
-import {
-  approvedJobHostFamilies,
-  defaultProviders,
-} from '../shared/constants'
 import { SearchStageError, serializeFailureDetails } from '../shared/failure'
 import { getJobSearchModel } from '../shared/model'
 import { generateSearchQuerySystem } from '../shared/prompts'
 import { searchQuerySchema } from '../shared/schemas'
-
-const defaultProviderSet = new Set<string>(defaultProviders)
-
-/**
- * Builds the site clause from either the selected providers or the full host
- * list.
- */
-function buildSiteClause(selectedProviders?: string[]) {
-  const hosts =
-    selectedProviders && selectedProviders.length > 0
-      ? approvedJobHostFamilies
-          .filter((f) => selectedProviders.includes(f.provider))
-          .map((f) => f.queryHost)
-      : approvedJobHostFamilies
-          .filter((f) => defaultProviderSet.has(f.provider))
-          .map((f) => f.queryHost)
-
-  if (hosts.length === 1) return `site:${hosts[0]}`
-  return `(${hosts.map((host) => `site:${host}`).join(' OR ')})`
-}
 
 /**
  * Normalizes the raw intent string into one of the two supported values.
@@ -48,25 +24,15 @@ function normalizeIntent(value: string) {
 
 /**
  * Calls the LLM to classify the user prompt and generate a Tavily Boolean
- * query targeting the approved ATS hosts.
+ * query. Domain scoping is applied when Tavily is called.
  */
-export async function generateSearchQuery(
-  prompt: string,
-  selectedProviders?: string[],
-  modelId?: string,
-) {
-  const siteClause = buildSiteClause(selectedProviders)
-
+export async function generateSearchQuery(prompt: string, modelId?: string) {
   try {
     const { output } = await generateText({
       model: getJobSearchModel(modelId),
       maxOutputTokens: 2048,
       system: generateSearchQuerySystem,
-      prompt: [
-        `Site clause (copy exactly): ${siteClause}`,
-        '',
-        `User prompt: ${prompt}`,
-      ].join('\n'),
+      prompt: `User prompt: ${prompt}`,
       output: Output.object({
         schema: searchQuerySchema,
       }),

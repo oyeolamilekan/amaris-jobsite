@@ -1,5 +1,6 @@
 import { internal } from '../_generated/api'
 import type { ActionCtx } from '../_generated/server'
+import { resolveJobSearchDomains } from '../shared/constants'
 import { getSearchRuntimeConfig } from '../shared/env'
 import {
   FAILED_SEARCH_SUMMARY,
@@ -13,28 +14,28 @@ import { searchTavilyJobs } from '../shared/tavily'
 
 /**
  * Classifies the prompt and generates a Tavily query via a single LLM call.
- * Returns the intent and the generated query string.
+ * Domain filters are applied later at the Tavily request layer.
  */
-export async function classifyAndBuildQuery(
-  prompt: string,
-  selectedProviders?: string[],
-  modelId?: string,
-) {
-  return generateSearchQuery(prompt, selectedProviders, modelId)
+export async function classifyAndBuildQuery(prompt: string, modelId?: string) {
+  return generateSearchQuery(prompt, modelId)
 }
 
 /**
- * Runs the core search pipeline: Tavily retrieval → direct mapping to jobs.
- * Returns everything needed to persist a completed search.
+ * Runs the core search pipeline: domain-scoped Tavily retrieval → direct
+ * mapping to jobs. Returns everything needed to persist a completed search.
  */
 export async function runJobSearchPipeline(
   prompt: string,
   tavilyQuery: string,
+  selectedProviders?: string[],
   modelId?: string,
 ) {
   const { tavilyApiKey } = getSearchRuntimeConfig()
+  const includeDomains = resolveJobSearchDomains(selectedProviders)
 
-  const tavilyResults = await searchTavilyJobs(tavilyApiKey, tavilyQuery)
+  const tavilyResults = await searchTavilyJobs(tavilyApiKey, tavilyQuery, {
+    includeDomains,
+  })
 
   const extractions = await extractAllJobDetails(
     tavilyResults.results,

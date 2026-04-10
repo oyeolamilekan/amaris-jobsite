@@ -173,10 +173,10 @@ export const LINKEDIN_PEOPLE_PRIORITY_TERMS = [
 ] as const
 
 /**
- * Describes one ATS provider family and the hostnames used for both matching
- * and outward-facing search clauses. For multi-tenant providers, `queryHost`
- * can be the shared base domain so one `site:` clause can cover many company
- * subdomains.
+ * Describes one ATS provider family and the hostnames used for provider-aware
+ * matching and Tavily domain scoping. For multi-tenant providers, `queryHost`
+ * stores a canonical domain reference alongside the concrete `hosts` that
+ * should be sent to Tavily `include_domains`.
  */
 export type ApprovedJobHostFamily = {
   provider: string
@@ -296,17 +296,9 @@ export const approvedJobHosts = Array.from(
 )
 
 /**
- * Flattened list of the outward-facing hostnames used in Boolean `site:`
- * clauses for live job search.
- */
-export const approvedJobSearchHosts = approvedJobHostFamilies.map(
-  (family) => family.queryHost,
-)
-
-/**
  * Maximum number of job-board providers a user can target in a single search.
  */
-export const MAX_SELECTED_PROVIDERS = 8
+export const MAX_SELECTED_PROVIDERS = 15
 
 /**
  * Default provider selection used when no filter is applied. Keep this list in
@@ -322,7 +314,36 @@ export const defaultProviders = [
   'bamboohr',
   'jobvite',
   'icims',
+  'pinpointhq',
+  'zohorecruit',
+  'notion',
+  'workable',
+  'factorialhr',
+  'jazzhr',
+  'join',
 ] as const
+
+const defaultProviderSet = new Set<string>(defaultProviders)
+
+/**
+ * Resolves the approved ATS domains that Tavily should search for the current
+ * provider selection. Falls back to the default provider set when no explicit
+ * selection is supplied.
+ */
+export function resolveJobSearchDomains(selectedProviders?: readonly string[]) {
+  const providerSet =
+    selectedProviders && selectedProviders.length > 0
+      ? new Set(selectedProviders)
+      : defaultProviderSet
+
+  return Array.from(
+    new Set(
+      approvedJobHostFamilies
+        .filter((family) => providerSet.has(family.provider))
+        .flatMap((family) => family.hosts),
+    ),
+  )
+}
 
 /**
  * Well-known AI Gateway model identifiers available for selection.

@@ -95,11 +95,7 @@ export const submitSearch = action({
 
       // 1. Classify intent + generate Tavily query (single LLM call)
       stage = 'prompt-analysis'
-      const result = await classifyAndBuildQuery(
-        prompt,
-        selectedProviders,
-        modelId,
-      )
+      const result = await classifyAndBuildQuery(prompt, modelId)
 
       // 2. Non-job-search early exit
       if (result.intent !== 'job_search') {
@@ -126,7 +122,12 @@ export const submitSearch = action({
       tavilyQuery = result.query
       stage = 'tavily-search'
       await reportProgress('searching')
-      const pipeline = await runJobSearchPipeline(prompt, tavilyQuery, modelId)
+      const pipeline = await runJobSearchPipeline(
+        prompt,
+        tavilyQuery,
+        selectedProviders,
+        modelId,
+      )
 
       // 4. Persist completed results
       stage = 'search-persistence'
