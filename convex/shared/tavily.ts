@@ -59,7 +59,6 @@ export async function searchTavily(
 ) {
   const searchDepth = options?.searchDepth ?? DEFAULT_TAVILY_SEARCH_DEPTH
   const maxResults = options?.maxResults ?? DEFAULT_TAVILY_MAX_RESULTS
-  const includeRawContent = options?.includeRawContent ?? false
   const timeRange = options?.timeRange
   const includeDomains = options?.includeDomains
 
