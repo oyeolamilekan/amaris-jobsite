@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
 import { convexQuery } from '@convex-dev/react-query'
 import { useAction } from 'convex/react'
@@ -40,7 +40,8 @@ function ResultsSummaryCards({
         <CardHeader>
           <CardTitle>{totalResults} roles saved</CardTitle>
           <CardDescription>
-            Structured and categorized from the live search run.
+            Structured from the live search run and refreshed against the source
+            URLs.
           </CardDescription>
         </CardHeader>
       </Card>
@@ -94,10 +95,15 @@ export type SavedResultsPageProps = {
   fallbackQuery: string
 }
 
-export function SavedResultsPage({
+type SavedResultsDataProps = SavedResultsPageProps & {
+  availabilityRefreshError: string | null
+}
+
+function SavedResultsData({
   searchId,
   fallbackQuery,
-}: SavedResultsPageProps) {
+  availabilityRefreshError,
+}: SavedResultsDataProps) {
   const { data } = useSuspenseQuery(
     convexQuery(api.search.queries.getSearchResultPage, {
       searchId,
@@ -225,6 +231,10 @@ export function SavedResultsPage({
       initialQuery={activeQuery}
       title={`Results for “${activeQuery}”`}
     >
+      {availabilityRefreshError ? (
+        <p className="text-sm text-destructive">{availabilityRefreshError}</p>
+      ) : null}
+
       <ResultsSummaryCards
         categories={search.categories}
         totalResults={search.totalResults}
@@ -233,10 +243,10 @@ export function SavedResultsPage({
       {jobs.length === 0 ? (
         <Card className="rounded-[1.5rem]">
           <CardHeader>
-            <CardTitle>No live job results were structured</CardTitle>
+            <CardTitle>No active job postings remain</CardTitle>
             <CardDescription>
-              The search completed, but the retrieved web results did not look
-              like credible live openings to save.
+              The search completed, but no active job postings remain in this
+              saved result set.
             </CardDescription>
           </CardHeader>
         </Card>
@@ -264,5 +274,78 @@ export function SavedResultsPage({
         }}
       />
     </ResultsShell>
+  )
+}
+
+export function SavedResultsPage({
+  searchId,
+  fallbackQuery,
+}: SavedResultsPageProps) {
+  const refreshSearchResultsAvailability = useAction(
+    api.search.actions.refreshSearchResultsAvailability,
+  )
+  const [isRefreshingAvailability, setIsRefreshingAvailability] = useState(true)
+  const [availabilityRefreshError, setAvailabilityRefreshError] =
+    useState<string | null>(null)
+
+  useEffect(() => {
+    let isCancelled = false
+
+    async function refreshAvailability() {
+      setIsRefreshingAvailability(true)
+      setAvailabilityRefreshError(null)
+
+      try {
+        await refreshSearchResultsAvailability({
+          searchId,
+        })
+      } catch (error) {
+        if (!isCancelled) {
+          setAvailabilityRefreshError(getErrorMessage(error))
+        }
+      } finally {
+        if (!isCancelled) {
+          setIsRefreshingAvailability(false)
+        }
+      }
+    }
+
+    void refreshAvailability()
+
+    return () => {
+      isCancelled = true
+    }
+  }, [refreshSearchResultsAvailability, searchId])
+
+  if (isRefreshingAvailability) {
+    return (
+      <ResultsShell
+        description="Checking which saved job postings are still live before showing this result set."
+        initialQuery={fallbackQuery}
+        title={
+          fallbackQuery
+            ? `Refreshing results for “${fallbackQuery}”`
+            : 'Refreshing saved results'
+        }
+      >
+        <Card className="rounded-[1.5rem]">
+          <CardHeader>
+            <CardTitle>Checking saved job links</CardTitle>
+            <CardDescription>
+              We&apos;re opening the saved posting URLs and removing any roles
+              that are no longer live.
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      </ResultsShell>
+    )
+  }
+
+  return (
+    <SavedResultsData
+      availabilityRefreshError={availabilityRefreshError}
+      fallbackQuery={fallbackQuery}
+      searchId={searchId}
+    />
   )
 }

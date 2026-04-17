@@ -2,13 +2,14 @@ import { paginationOptsValidator } from 'convex/server'
 import { v } from 'convex/values'
 import type { Id } from '../_generated/dataModel'
 import type { QueryCtx } from '../_generated/server'
-import { internalMutation, query } from '../_generated/server'
+import { internalMutation, internalQuery, query } from '../_generated/server'
 import { requireAdminUser } from '../auth'
 import {
   DEFAULT_ADMIN_SEARCH_LIMIT,
   MAX_ADMIN_SEARCH_LIMIT,
   MAX_SAVED_JOB_RESULTS,
 } from '../shared/constants'
+import { buildJobSearchSummary } from './summary'
 import {
   savedJobValidator,
   searchFailureTraceValidator,
@@ -166,6 +167,113 @@ export const getSearchResultPage = query({
     return {
       search: publicSearch,
       jobs: sortedJobs,
+    }
+  },
+})
+
+/**
+ * Internal snapshot used by availability-refresh actions before they mutate the
+ * saved result set.
+ */
+export const getSearchAvailabilitySnapshot = internalQuery({
+  args: {
+    searchId: v.id('searchRuns'),
+  },
+  handler: async (ctx, args) => {
+    const search = await ctx.db.get(args.searchId)
+
+    if (search === null) {
+      return null
+    }
+
+    const jobs = await getSavedJobsForSearchRun(ctx, args.searchId)
+
+    return {
+      search,
+      jobs,
+    }
+  },
+})
+
+/**
+ * Applies the outcome of a saved-job availability refresh by deleting
+ * unavailable postings, updating last-checked timestamps for survivors, and
+ * keeping the parent search summary/counts in sync.
+ */
+export const applySearchAvailabilityRefresh = internalMutation({
+  args: {
+    searchId: v.id('searchRuns'),
+    checkedJobs: v.array(
+      v.object({
+        jobResultId: v.id('jobResults'),
+        availabilityCheckedAt: v.number(),
+      }),
+    ),
+    unavailableJobIds: v.array(v.id('jobResults')),
+  },
+  handler: async (ctx, args) => {
+    const search = await ctx.db.get(args.searchId)
+
+    if (search === null) {
+      return {
+        removedCount: 0,
+        remainingCount: 0,
+      }
+    }
+
+    const jobs = await getSavedJobsForSearchRun(ctx, args.searchId)
+    const liveJobIds = new Set(jobs.map((job) => job._id))
+    let removedCount = 0
+
+    for (const jobId of new Set(args.unavailableJobIds)) {
+      if (!liveJobIds.has(jobId)) {
+        continue
+      }
+
+      const linkedInSearches = await ctx.db
+        .query('linkedinPeopleSearches')
+        .withIndex('by_jobResultId', (q) => q.eq('jobResultId', jobId))
+        .take(10)
+
+      for (const linkedInSearch of linkedInSearches) {
+        await ctx.db.delete(linkedInSearch._id)
+      }
+
+      await ctx.db.delete(jobId)
+      liveJobIds.delete(jobId)
+      removedCount++
+    }
+
+    for (const checkedJob of args.checkedJobs) {
+      if (!liveJobIds.has(checkedJob.jobResultId)) {
+        continue
+      }
+
+      await ctx.db.patch(checkedJob.jobResultId, {
+        availabilityCheckedAt: checkedJob.availabilityCheckedAt,
+      })
+    }
+
+    const remainingJobs = await getSavedJobsForSearchRun(ctx, args.searchId)
+    const nextTotalResults = remainingJobs.length
+    const nextSummary =
+      search.isJobSearch && search.status === 'completed'
+        ? buildJobSearchSummary(nextTotalResults)
+        : search.summary
+
+    if (
+      nextTotalResults !== search.totalResults ||
+      nextSummary !== search.summary
+    ) {
+      await ctx.db.patch(args.searchId, {
+        totalResults: nextTotalResults,
+        summary: nextSummary,
+      })
+    }
+
+    return {
+      removedCount,
+      remainingCount: nextTotalResults,
     }
   },
 })

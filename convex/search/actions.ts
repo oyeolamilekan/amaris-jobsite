@@ -10,6 +10,10 @@ import {
   MAX_SELECTED_PROVIDERS,
   type SearchProgressStage,
 } from '../shared/constants'
+import {
+  checkJobPostingAvailabilityBatch,
+  shouldRecheckJobPosting,
+} from './availability'
 import { assertAiGatewayConfigured } from '../shared/env'
 import {
   NOT_JOB_SEARCH_SUMMARY,
@@ -168,6 +172,108 @@ export const submitSearch = action({
           ? error.message
           : 'Something went wrong while processing this search. Please try again.',
       )
+    }
+  },
+})
+
+/**
+ * Revalidates saved job URLs before the results page is displayed, pruning
+ * postings that are clearly no longer live.
+ */
+export const refreshSearchResultsAvailability = action({
+  args: {
+    searchId: v.id('searchRuns'),
+  },
+  handler: async (
+    ctx,
+    args,
+  ): Promise<{
+    checkedCount: number
+    removedCount: number
+    remainingCount: number
+    skipped: boolean
+  }> => {
+    const snapshot = await ctx.runQuery(
+      internal.search.queries.getSearchAvailabilitySnapshot,
+      {
+        searchId: args.searchId,
+      },
+    )
+
+    if (snapshot === null) {
+      return {
+        checkedCount: 0,
+        removedCount: 0,
+        remainingCount: 0,
+        skipped: true,
+      }
+    }
+
+    if (
+      !snapshot.search.isJobSearch ||
+      snapshot.search.status !== 'completed' ||
+      snapshot.jobs.length === 0
+    ) {
+      return {
+        checkedCount: 0,
+        removedCount: 0,
+        remainingCount: snapshot.jobs.length,
+        skipped: true,
+      }
+    }
+
+    const jobsToCheck = snapshot.jobs.filter((job) =>
+      shouldRecheckJobPosting(job.availabilityCheckedAt),
+    )
+
+    if (jobsToCheck.length === 0) {
+      return {
+        checkedCount: 0,
+        removedCount: 0,
+        remainingCount: snapshot.jobs.length,
+        skipped: true,
+      }
+    }
+
+    const checks = await checkJobPostingAvailabilityBatch(jobsToCheck)
+    const unavailableJobIds: Id<'jobResults'>[] = []
+    const checkedJobs: Array<{
+      jobResultId: Id<'jobResults'>
+      availabilityCheckedAt: number
+    }> = []
+
+    jobsToCheck.forEach((job, index) => {
+      const check = checks[index]
+
+      if (!check) {
+        return
+      }
+
+      if (check.status === 'unavailable') {
+        unavailableJobIds.push(job._id)
+        return
+      }
+
+      checkedJobs.push({
+        jobResultId: job._id,
+        availabilityCheckedAt: check.checkedAt,
+      })
+    })
+
+    const result = await ctx.runMutation(
+      internal.search.queries.applySearchAvailabilityRefresh,
+      {
+        searchId: args.searchId,
+        checkedJobs,
+        unavailableJobIds,
+      },
+    )
+
+    return {
+      checkedCount: jobsToCheck.length,
+      removedCount: result.removedCount,
+      remainingCount: result.remainingCount,
+      skipped: false,
     }
   },
 })

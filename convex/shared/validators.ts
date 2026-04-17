@@ -149,6 +149,7 @@ export const savedJobFields = {
   relevance: v.optional(v.number()),
   tags: v.array(v.string()),
   postedAt: v.optional(v.string()),
+  availabilityCheckedAt: v.optional(v.number()),
   rawResult: v.optional(savedRawSearchResultValidator),
 }
 

@@ -10,6 +10,8 @@ import {
 import { generateSearchQuery } from './facets'
 import { tavilyResultsToJobs } from './normalize'
 import { extractAllJobDetails } from './extract'
+import { checkJobPostingAvailabilityBatch } from './availability'
+import { buildJobSearchSummary } from './summary'
 import { searchTavilyJobs } from '../shared/tavily'
 
 /**
@@ -37,18 +39,34 @@ export async function runJobSearchPipeline(
     includeDomains,
   })
 
-  const extractions = await extractAllJobDetails(
+  const availabilityChecks = await checkJobPostingAvailabilityBatch(
     tavilyResults.results,
+  )
+  const liveCandidates = tavilyResults.results
+    .map((result, index) => ({
+      availabilityCheck: availabilityChecks[index],
+      result,
+    }))
+    .filter(
+      (candidate) => candidate.availabilityCheck?.status !== 'unavailable',
+    )
+  const liveResults = liveCandidates.map((candidate) => candidate.result)
+  const liveAvailabilityChecks = liveCandidates.map(
+    (candidate) => candidate.availabilityCheck,
+  )
+
+  const extractions = await extractAllJobDetails(
+    liveResults,
     prompt,
     modelId,
   )
 
-  const jobs = tavilyResultsToJobs(tavilyResults.results, extractions)
-
-  const summary =
-    jobs.length > 0
-      ? `Found ${jobs.length} job opening${jobs.length === 1 ? '' : 's'} from job board search results.`
-      : 'No job openings were found for this search.'
+  const jobs = tavilyResultsToJobs(
+    liveResults,
+    extractions,
+    liveAvailabilityChecks,
+  )
+  const summary = buildJobSearchSummary(jobs.length)
 
   return {
     summary,

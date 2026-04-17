@@ -142,6 +142,16 @@ export const DEFAULT_TAVILY_SEARCH_DEPTH = 'advanced' as const
 export const DEFAULT_TAVILY_MAX_RESULTS = 10
 
 /**
+ * Timeout for direct job-post availability checks.
+ */
+export const JOB_AVAILABILITY_CHECK_TIMEOUT_MS = 15_000
+
+/**
+ * Minimum interval before a saved job URL is revalidated again.
+ */
+export const JOB_AVAILABILITY_RECHECK_INTERVAL_MS = 6 * 60 * 60 * 1000
+
+/**
  * Default Tavily depth for LinkedIn people lookups.
  */
 export const DEFAULT_LINKEDIN_PEOPLE_SEARCH_DEPTH = 'basic' as const

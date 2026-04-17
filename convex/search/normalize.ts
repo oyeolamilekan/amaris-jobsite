@@ -1,6 +1,7 @@
 import { MAX_SAVED_JOB_RESULTS } from '../shared/constants'
 import type { JobExtraction } from '../shared/schemas'
 import type { TavilySearchResult } from '../shared/tavily'
+import type { JobAvailabilityCheck } from './availability'
 
 const MAX_JOB_SUMMARY_LENGTH = 500
 type TavilySingleResult = TavilySearchResult['results'][number]
@@ -99,6 +100,7 @@ function cleanJobTitle(title: string): string {
 export function tavilyResultsToJobs(
   results: TavilySearchResult['results'],
   extractions?: JobExtraction[],
+  availabilityChecks?: readonly JobAvailabilityCheck[],
 ) {
   const seenUrls = new Set<string>()
 
@@ -145,6 +147,7 @@ export function tavilyResultsToJobs(
         workArrangement: 'unspecified' as const,
         employmentType: extraction?.employmentType ?? ('unspecified' as const),
         tags: extraction?.tags ?? ([] as string[]),
+        availabilityCheckedAt: availabilityChecks?.[originalIndex]?.checkedAt,
       }
     })
     .sort((a, b) => {
