@@ -7,10 +7,14 @@ const TITLE_SEPARATOR = /\s*[\|–—-]\s*/
 /**
  * Parses a LinkedIn search result title into a name and headline.
  *
+ * @param title - Raw Tavily result title for a LinkedIn profile-like page.
+ *
  * Common formats:
  *   "Jane Doe - Senior Engineer at Acme | LinkedIn"
  *   "Jane Doe – Acme Corp | LinkedIn"
  *   "Jane Doe - Acme Corp - LinkedIn"
+ * @returns Parsed name/headline fields, omitting either field when it cannot
+ * be confidently extracted.
  */
 function parseLinkedInTitle(title: string): {
   name: string | undefined
@@ -43,6 +47,11 @@ const LOCATION_PATTERN =
 /**
  * Attempts to extract a location from LinkedIn content. Looks for patterns
  * like "City, State" or "City, Country".
+ *
+ * @param content - Flattened page content assembled from Tavily snippets and
+ * raw content.
+ * @returns A location string when one can be safely inferred, otherwise
+ * `undefined`.
  */
 function extractLocation(content: string): string | undefined {
   const match = content.match(LOCATION_PATTERN)
@@ -71,7 +80,8 @@ function extractLocation(content: string): string | undefined {
  * title parsing and content extraction — no LLM calls needed.
  *
  * @param tavilyResults - The raw Tavily response to structure.
- * @returns Structured LinkedIn people results ready for normalization.
+ * @returns Structured LinkedIn people results ready for normalization,
+ * including a summary string and LinkedIn profile URLs copied from Tavily.
  */
 export function structureLinkedInPeopleResults(
   tavilyResults: TavilySearchResult,

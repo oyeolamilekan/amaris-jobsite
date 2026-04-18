@@ -33,6 +33,13 @@ export function getRequiredEnv(name: string) {
   return value
 }
 
+/**
+ * Verifies that the AI Gateway key is present and rethrows missing-env errors
+ * as a stage-aware `SearchStageError`.
+ *
+ * @returns Nothing. The function completes silently when the environment is
+ * configured and throws when `AI_GATEWAY_API_KEY` is missing.
+ */
 export function assertAiGatewayConfigured() {
   try {
     getRequiredEnv('AI_GATEWAY_API_KEY')
@@ -78,7 +85,14 @@ export function getSearchRuntimeConfig() {
   }
 }
 
-// Safe env access that doesn't throw — returns '' when unavailable (module init).
+/**
+ * Reads an environment variable without throwing.
+ *
+ * @param name - Environment variable name to read.
+ * @returns The environment variable value, or an empty string when the runtime
+ * environment is unavailable or the variable is unset. This is mainly useful
+ * during module initialization where hard failures are undesirable.
+ */
 export const getEnv = (name: string) =>
   (globalThis as { process?: { env?: Record<string, string | undefined> } })
     .process?.env?.[name] ?? ''

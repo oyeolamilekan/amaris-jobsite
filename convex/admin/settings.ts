@@ -10,6 +10,14 @@ import { isAvailableAiModelId, resolveAiModelId } from '../shared/model'
  */
 export const getSettings = query({
   args: {},
+  /**
+   * @param ctx - Query context used to enforce admin access and read the
+   * singleton `adminSettings` document.
+   * @param _args - No input arguments are required for this query.
+   * @returns The current AI model id plus the last update timestamp. When no
+   * settings document exists yet, the query falls back to the default model and
+   * returns `updatedAt: null`.
+   */
   handler: async (ctx) => {
     await requireAdminUser(ctx)
     const settings = await ctx.db.query('adminSettings').first()
@@ -26,6 +34,13 @@ export const getSettings = query({
  */
 export const getSettingsInternal = internalQuery({
   args: {},
+  /**
+   * @param ctx - Query context used by internal actions that need the currently
+   * selected AI model without enforcing admin-only access.
+   * @param _args - No input arguments are required for this query.
+   * @returns The resolved AI model id, falling back to the default model when no
+   * settings document exists yet.
+   */
   handler: async (ctx) => {
     const settings = await ctx.db.query('adminSettings').first()
 
@@ -43,6 +58,16 @@ export const updateAiModel = mutation({
   args: {
     aiModel: v.string(),
   },
+  /**
+   * @param ctx - Mutation context used to enforce admin access and upsert the
+   * singleton `adminSettings` document.
+   * @param args - Requested AI model update payload.
+   * @param args.aiModel - The model id to persist. The value must match one of
+   * the supported model ids exposed by `AVAILABLE_AI_MODELS`; unsupported ids
+   * throw.
+   * @returns Nothing. The mutation either patches the existing settings
+   * document or inserts it if it does not exist yet.
+   */
   handler: async (ctx, args) => {
     await requireAdminUser(ctx)
 

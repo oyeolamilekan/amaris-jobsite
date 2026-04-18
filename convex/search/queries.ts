@@ -65,6 +65,15 @@ function resolveAdminSearchLimit(requestedLimit: number | undefined) {
   return Math.max(1, Math.min(Math.floor(limit), MAX_ADMIN_SEARCH_LIMIT))
 }
 
+/**
+ * Builds the base search-run query used by the admin views, with an optional
+ * lower bound on `createdAt`.
+ *
+ * @param ctx - Query context used to create the indexed `searchRuns` query.
+ * @param sinceTimestamp - Optional Unix-millisecond lower bound for the
+ * `createdAt` field. When omitted, the query spans all saved search runs.
+ * @returns An indexed Convex query scoped for the requested time window.
+ */
 function queryAdminSearchRunsByCreatedAt(
   ctx: QueryCtx,
   sinceTimestamp: number | undefined,
@@ -96,6 +105,25 @@ export const saveSearchOutcome = internalMutation({
   /**
    * @param ctx - Mutation context used to write the search run and job results.
    * @param args - The fully normalized search outcome to persist.
+   * @param args.prompt - The original prompt associated with the saved search
+   * run.
+   * @param args.isJobSearch - Whether the prompt was classified as a real job
+   * search.
+   * @param args.status - The terminal lifecycle state for the run, such as
+   * `completed`, `not_job_search`, or `failed`.
+   * @param args.tavilyQuery - Optional generated Tavily query string. This is
+   * typically present for real job searches and omitted when the search exits
+   * early or no query was produced.
+   * @param args.selectedProviders - Optional provider ids captured for the run.
+   * When omitted, no explicit provider selection was persisted.
+   * @param args.failureTrace - Optional serialized failure metadata for failed
+   * runs. Omitted for successful and early-exit runs.
+   * @param args.summary - Human-readable summary shown back to the UI.
+   * @param args.categories - Saved category labels for the run. This may be an
+   * empty array when no categories were inferred.
+   * @param args.jobs - Fully normalized job payloads to insert into
+   * `jobResults`. The mutation uses this array both for inserts and for
+   * computing `totalResults`.
    * @returns The id of the saved `searchRuns` document.
    */
   handler: async (ctx, args) => {
@@ -136,8 +164,12 @@ export const getSearchResultPage = query({
   },
   /**
    * @param ctx - Query context used to read the search run and job results.
-   * @param args - The id of the saved search run to load.
-   * @returns The search result page payload or `null` when the search is missing.
+   * @param args - Lookup payload for a single saved search run.
+   * @param args.searchId - The `searchRuns` document to load for the results
+   * page.
+   * @returns The public results payload or `null` when the search is missing.
+   * The returned search object omits the internal `failureTrace`, and the jobs
+   * are sorted by relevance and match score before being returned.
    */
   handler: async (ctx, args) => {
     const search = await ctx.db.get(args.searchId)
@@ -179,6 +211,15 @@ export const getSearchAvailabilitySnapshot = internalQuery({
   args: {
     searchId: v.id('searchRuns'),
   },
+  /**
+   * @param ctx - Query context used by refresh actions before they mutate a
+   * saved result set.
+   * @param args - Snapshot lookup payload for a single saved search.
+   * @param args.searchId - The saved search run to inspect before availability
+   * checks are applied.
+   * @returns The raw search run plus its saved jobs, or `null` when the search
+   * does not exist.
+   */
   handler: async (ctx, args) => {
     const search = await ctx.db.get(args.searchId)
 
@@ -211,6 +252,19 @@ export const applySearchAvailabilityRefresh = internalMutation({
     ),
     unavailableJobIds: v.array(v.id('jobResults')),
   },
+  /**
+   * @param ctx - Mutation context used to delete unavailable jobs, patch
+   * survivors, and update the parent search summary.
+   * @param args - Availability refresh payload computed by the action layer.
+   * @param args.searchId - The parent `searchRuns` document being refreshed.
+   * @param args.checkedJobs - Jobs that were rechecked and are still considered
+   * live. Their `availabilityCheckedAt` timestamps are patched in place.
+   * @param args.unavailableJobIds - Saved job ids that should be removed from
+   * the result set because direct URL checks classified them as unavailable.
+   * Any linked `linkedinPeopleSearches` documents are deleted first.
+   * @returns Counts for how many jobs were removed and how many remain after the
+   * refresh completes. Missing searches return zero counts.
+   */
   handler: async (ctx, args) => {
     const search = await ctx.db.get(args.searchId)
 
@@ -290,7 +344,14 @@ export const getAdminSearchRuns = query({
   /**
    * @param ctx - Query context used to read recent search runs and their jobs.
    * @param args - Cursor-based pagination options and optional time filter.
-   * @returns One page of recent search runs with their saved job results.
+   * @param args.paginationOpts - Standard Convex pagination settings. The
+   * requested `numItems` value is clamped server-side to a safe admin limit
+   * before the query is executed.
+   * @param args.sinceTimestamp - Optional Unix-millisecond lower bound for
+   * `searchRuns.createdAt`. When omitted, the query returns searches from all
+   * time.
+   * @returns One page of recent search runs with their saved job results,
+   * ordered newest-first.
    */
   handler: async (ctx, args) => {
     await requireAdminUser(ctx)
@@ -326,6 +387,16 @@ export const getAdminSearchStats = query({
   args: {
     sinceTimestamp: v.optional(v.number()),
   },
+  /**
+   * @param ctx - Query context used to aggregate saved-search statistics for
+   * the admin dashboard.
+   * @param args - Optional time-window filter for the aggregate query.
+   * @param args.sinceTimestamp - Optional Unix-millisecond lower bound for
+   * `searchRuns.createdAt`. When omitted, the stats cover all saved search
+   * runs.
+   * @returns Aggregate counts for total runs, completed runs, failed runs, and
+   * total saved jobs within the requested window.
+   */
   handler: async (ctx, args) => {
     await requireAdminUser(ctx)
     const docs = await queryAdminSearchRunsByCreatedAt(

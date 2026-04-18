@@ -30,6 +30,16 @@ const approvedProviderSet = new Set(
   approvedJobHostFamilies.map((family) => family.provider),
 )
 
+/**
+ * Normalizes an optional provider selection into a validated list of approved
+ * provider ids.
+ *
+ * @param selectedProviders - Optional provider keys from the client. When the
+ * array is omitted or empty, the default provider list is used. Duplicate
+ * values are removed, unsupported providers are rejected, and selections above
+ * `MAX_SELECTED_PROVIDERS` throw.
+ * @returns A deduplicated list of approved provider ids.
+ */
 function resolveSelectedProviders(selectedProviders?: string[]) {
   if (!selectedProviders || selectedProviders.length === 0) {
     return [...defaultProviders]
@@ -63,6 +73,22 @@ export const submitSearch = action({
     progressId: v.optional(v.id('searchProgress')),
     selectedProviders: v.optional(v.array(v.string())),
   },
+  /**
+   * @param ctx - Action context used to read admin settings, call internal
+   * queries and mutations, update progress, and persist failure traces.
+   * @param args - Search submission payload from the frontend.
+   * @param args.prompt - The raw user prompt. The action trims this value and
+   * rejects the request if the trimmed result is empty.
+   * @param args.progressId - Optional id of a `searchProgress` document created
+   * before the action starts. When provided, the action reports analyzing,
+   * searching, saving, completed, and failed stages back to the loading UI.
+   * @param args.selectedProviders - Optional list of provider ids to constrain
+   * the search. When omitted or empty, the default provider selection is used.
+   * Duplicate values are removed, unsupported providers throw, and selections
+   * above `MAX_SELECTED_PROVIDERS` are rejected.
+   * @returns The id of the saved `searchRuns` document for the completed or
+   * early-exit search run.
+   */
   handler: async (ctx, args): Promise<{ searchId: Id<'searchRuns'> }> => {
     const prompt = args.prompt.trim()
     if (!prompt) throw new Error('Please enter a search prompt.')
@@ -184,6 +210,17 @@ export const refreshSearchResultsAvailability = action({
   args: {
     searchId: v.id('searchRuns'),
   },
+  /**
+   * @param ctx - Action context used to read the saved search snapshot, perform
+   * availability checks, and persist the refresh outcome.
+   * @param args - Availability-refresh payload for a saved search.
+   * @param args.searchId - The saved search run to revalidate before rendering
+   * the results page.
+   * @returns Counts describing how many jobs were checked, removed, and left in
+   * the saved result set. `skipped` is `true` when the search is missing, is
+   * not a completed job search, has no jobs, or has no jobs that need
+   * rechecking.
+   */
   handler: async (
     ctx,
     args,

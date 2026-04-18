@@ -30,6 +30,14 @@ type TavilySingleResult = TavilySearchResult['results'][number]
  * Calls the LLM to extract structured job metadata from a single Tavily
  * result. Uses `rawContent` when available, falling back to `content`.
  * Returns `NULL_EXTRACTION` on any failure so the pipeline can continue.
+ *
+ * @param result - One normalized Tavily search result to extract metadata
+ * from.
+ * @param userPrompt - Original user prompt used to score query-aware
+ * relevance.
+ * @param modelId - Optional AI model override for the extraction call.
+ * @returns Structured job metadata for the result, or `NULL_EXTRACTION` when
+ * extraction fails or produces no usable output.
  */
 export async function extractJobDetails(
   result: TavilySingleResult,
@@ -81,6 +89,13 @@ export async function extractJobDetails(
  * Extracts structured metadata from all Tavily results in parallel.
  * Individual failures are silently replaced with null extractions so the
  * pipeline always gets a complete array.
+ *
+ * @param results - Normalized Tavily results to enrich.
+ * @param userPrompt - Original user prompt reused for per-result relevance
+ * extraction.
+ * @param modelId - Optional AI model override for all extraction calls.
+ * @returns One extraction result per input item, preserving input order and
+ * substituting `NULL_EXTRACTION` for failed entries.
  */
 export async function extractAllJobDetails(
   results: TavilySearchResult['results'],

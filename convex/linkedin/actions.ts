@@ -24,7 +24,10 @@ export const ensureLinkedInPeopleForJob = action({
   },
   /**
    * @param ctx - Action context used to read cached state and persist results.
-   * @param args - The job result selected by the user.
+   * @param args - On-demand LinkedIn enrichment payload for a saved job.
+   * @param args.jobResultId - The saved `jobResults` document selected by the
+   * user. The action uses this id to load company and location context before
+   * building the LinkedIn-focused Tavily query.
    * @returns The id of the saved LinkedIn people search document.
    */
   handler: async (

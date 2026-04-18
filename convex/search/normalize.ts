@@ -8,6 +8,10 @@ type TavilySingleResult = TavilySearchResult['results'][number]
 
 /**
  * Strips common markdown formatting so summaries display as plain text.
+ *
+ * @param value - Raw markdown-like text from extracted summaries or source
+ * snippets.
+ * @returns Plain-text content suitable for persistence and UI display.
  */
 function stripMarkdown(value: string) {
   return value
@@ -23,6 +27,14 @@ function stripMarkdown(value: string) {
     .trim()
 }
 
+/**
+ * Truncates a string without cutting too aggressively through the middle of a
+ * word.
+ *
+ * @param value - Text to shorten.
+ * @param maxLength - Target maximum output length before appending `...`.
+ * @returns The original text when short enough, otherwise a truncated copy.
+ */
 function truncateText(value: string, maxLength: number) {
   if (value.length <= maxLength) {
     return value
@@ -36,10 +48,25 @@ function truncateText(value: string, maxLength: number) {
   return `${truncated.slice(0, cutoff).trimEnd()}...`
 }
 
+/**
+ * Clamps a numeric score into the UI-friendly 0-100 percentage range.
+ *
+ * @param value - Raw score or percentage candidate.
+ * @returns An integer percentage bounded to 0-100.
+ */
 function clampPercent(value: number) {
   return Math.max(0, Math.min(100, Math.round(value)))
 }
 
+/**
+ * Chooses the best available relevance signal for a saved job.
+ *
+ * @param extraction - Optional LLM extraction payload for the Tavily result.
+ * @param result - Original Tavily result whose retrieval score can act as a
+ * fallback.
+ * @returns A clamped relevance percentage derived from the extraction when
+ * available, otherwise from the Tavily retrieval score.
+ */
 function resolveRelevance(
   extraction: JobExtraction | undefined,
   result: TavilySingleResult,
@@ -53,6 +80,10 @@ function resolveRelevance(
 
 /**
  * Extracts a readable hostname from a URL for use as a fallback source label.
+ *
+ * @param url - Job posting URL or any URL-like source string.
+ * @returns A hostname without `www.` when URL parsing succeeds, otherwise the
+ * original input string.
  */
 export function sourceFromUrl(url: string) {
   try {
@@ -65,6 +96,10 @@ export function sourceFromUrl(url: string) {
 /**
  * Extracts a company name from a typical ATS page title.
  * Handles patterns like "Role @ Company - Jobs" or "Role - Company".
+ *
+ * @param title - Raw page title returned by Tavily.
+ * @returns A best-effort company label or `undefined` when no reliable company
+ * segment can be inferred.
  */
 function extractCompanyFromTitle(title: string): string | undefined {
   const atMatch = title.match(/@\s*(.+?)(?:\s*[-–—]\s*(?:Jobs?|Careers?))?$/i)
@@ -84,6 +119,9 @@ function extractCompanyFromTitle(title: string): string | undefined {
 /**
  * Cleans a Tavily page title into a job title by stripping the company
  * and trailing noise like "- Jobs", "| Careers", etc.
+ *
+ * @param title - Raw page title returned by Tavily.
+ * @returns A simplified job-title string with common ATS suffix noise removed.
  */
 function cleanJobTitle(title: string): string {
   return title
@@ -96,6 +134,14 @@ function cleanJobTitle(title: string): string {
 /**
  * Maps raw Tavily search results directly to the DB-ready job shape.
  * When `extractions` is provided, extracted values override heuristic defaults.
+ *
+ * @param results - Normalized Tavily results to convert into saved jobs.
+ * @param extractions - Optional per-result extraction payloads aligned by array
+ * index.
+ * @param availabilityChecks - Optional availability results aligned by array
+ * index. When present, their timestamps are persisted on the matching jobs.
+ * @returns Ranked, deduplicated, persistence-ready job records capped to
+ * `MAX_SAVED_JOB_RESULTS`.
  */
 export function tavilyResultsToJobs(
   results: TavilySearchResult['results'],
@@ -170,6 +216,10 @@ export function tavilyResultsToJobs(
 
 /**
  * Normalizes and ranks the raw Tavily result items for persistence.
+ *
+ * @param results - Normalized Tavily results in original retrieval order.
+ * @returns Persistable raw-result rows with stable rank values and trimmed text
+ * fields.
  */
 export function normalizeRawSearchResults(
   results: TavilySearchResult['results'],

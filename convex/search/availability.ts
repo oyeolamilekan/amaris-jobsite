@@ -51,10 +51,25 @@ const HOST_UNAVAILABLE_PATTERNS = [
   },
 ] as const
 
+/**
+ * Collapses repeated whitespace so title and body comparisons use a consistent
+ * text shape.
+ *
+ * @param value - Raw text extracted from HTML or response bodies.
+ * @returns A trimmed string with repeated whitespace condensed to single
+ * spaces.
+ */
 function normalizeWhitespace(value: string) {
   return value.replace(/\s+/g, ' ').trim()
 }
 
+/**
+ * Decodes a small set of common HTML entities found on ATS pages.
+ *
+ * @param value - Raw HTML-derived string.
+ * @returns A string with frequently encountered entities converted back to
+ * human-readable characters.
+ */
 function decodeCommonEntities(value: string) {
   return value
     .replace(/&nbsp;/gi, ' ')
@@ -65,6 +80,13 @@ function decodeCommonEntities(value: string) {
     .replace(/&gt;/gi, '>')
 }
 
+/**
+ * Extracts a normalized document title from raw HTML for availability checks.
+ *
+ * @param html - Raw HTML response body.
+ * @returns The decoded `<title>` text, or an empty string when no title is
+ * present.
+ */
 function extractPageTitle(html: string) {
   const match = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)
   if (!match?.[1]) return ''
@@ -74,6 +96,14 @@ function extractPageTitle(html: string) {
   )
 }
 
+/**
+ * Removes markup and non-visible content from an HTML page before pattern
+ * matching.
+ *
+ * @param html - Raw HTML response body.
+ * @returns A plain-text approximation of the page contents for availability
+ * heuristics.
+ */
 function stripHtmlToText(html: string) {
   return normalizeWhitespace(
     decodeCommonEntities(
@@ -87,16 +117,37 @@ function stripHtmlToText(html: string) {
   )
 }
 
+/**
+ * Checks whether one hostname exactly matches, or is a subdomain of, an
+ * expected provider host.
+ *
+ * @param hostname - Parsed hostname from the visited job URL.
+ * @param expectedHost - Canonical provider host from the allowlist.
+ * @returns `true` when the hostname belongs to the expected host family.
+ */
 function hostnameMatches(hostname: string, expectedHost: string) {
   return hostname === expectedHost || hostname.endsWith(`.${expectedHost}`)
 }
 
+/**
+ * Returns host-specific unavailable markers for the given hostname.
+ *
+ * @param hostname - Parsed hostname from the visited job URL.
+ * @returns Regex patterns tailored to the ATS host, in addition to the generic
+ * unavailable markers used everywhere.
+ */
 function getUnavailablePatternsForHost(hostname: string) {
   return HOST_UNAVAILABLE_PATTERNS.flatMap((entry) =>
     hostnameMatches(hostname, entry.host) ? entry.patterns : [],
   )
 }
 
+/**
+ * Parses a lowercase hostname from a URL string.
+ *
+ * @param url - URL to inspect.
+ * @returns A lowercase hostname, or an empty string when URL parsing fails.
+ */
 function parseHostname(url: string) {
   try {
     return new URL(url).hostname.toLowerCase()
@@ -105,11 +156,28 @@ function parseHostname(url: string) {
   }
 }
 
+/**
+ * Tests whether the visited page text contains a known unavailable marker.
+ *
+ * @param text - Combined normalized page title and body text.
+ * @param hostname - Parsed hostname for host-specific rules.
+ * @returns `true` when the content strongly suggests the posting is no longer
+ * available.
+ */
 function hasUnavailableMarker(text: string, hostname: string) {
   return [...GENERIC_UNAVAILABLE_PATTERNS, ...getUnavailablePatternsForHost(hostname)]
     .some((pattern) => pattern.test(text))
 }
 
+/**
+ * Determines whether a saved job posting should be revalidated.
+ *
+ * @param availabilityCheckedAt - Optional timestamp from the last direct URL
+ * check. Missing values always force a recheck.
+ * @param now - Optional current timestamp override, mainly useful for tests.
+ * @returns `true` when the posting has never been checked or the last check is
+ * older than the configured recheck interval.
+ */
 export function shouldRecheckJobPosting(
   availabilityCheckedAt?: number,
   now = Date.now(),
@@ -124,6 +192,11 @@ export function shouldRecheckJobPosting(
 /**
  * Fetches a job URL directly and classifies whether the posting still looks
  * live. Only clear removals/closures are treated as unavailable.
+ *
+ * @param url - Direct job posting URL to inspect.
+ * @returns An availability classification containing the status, check time,
+ * and optional reason. Ambiguous fetch failures return `unknown` instead of
+ * deleting the posting.
  */
 export async function checkJobPostingAvailability(
   url: string,
@@ -205,6 +278,9 @@ export async function checkJobPostingAvailability(
 
 /**
  * Runs direct availability checks for a batch of job URLs in parallel.
+ *
+ * @param items - URL-bearing items to inspect. Only the `url` field is used.
+ * @returns One availability result per input item, preserving input order.
  */
 export async function checkJobPostingAvailabilityBatch(
   items: readonly { url: string }[],

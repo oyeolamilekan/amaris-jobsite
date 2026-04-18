@@ -43,8 +43,19 @@ export type TavilySearchResult = {
  *
  * @param apiKey - The Tavily API key used for authentication.
  * @param query - The already-normalized query string to execute.
- * @param options - Optional search-depth, domain, and result-count overrides.
- * @returns A normalized Tavily result payload.
+ * @param options - Optional request overrides.
+ * @param options.searchDepth - Tavily retrieval depth. When omitted, the
+ * module-level default search depth is used.
+ * @param options.maxResults - Maximum number of raw Tavily results to request.
+ * When omitted, the module-level default result count is used.
+ * @param options.includeRawContent - Compatibility flag for callers that want
+ * raw page content. The current implementation always requests Tavily raw
+ * content in text form.
+ * @param options.timeRange - Optional recency filter passed through to Tavily.
+ * @param options.includeDomains - Optional domain allowlist. When provided, the
+ * request is constrained to those domains only.
+ * @returns A normalized Tavily result payload containing only the fields the
+ * app uses downstream.
  */
 export async function searchTavily(
   apiKey: string,
@@ -148,7 +159,11 @@ export async function searchTavily(
  *
  * @param apiKey - The Tavily API key used for authentication.
  * @param query - The final job-search query.
- * @returns A normalized Tavily result payload using the default job settings.
+ * @param options - Optional job-search overrides.
+ * @param options.includeDomains - Optional ATS or careers-site allowlist used
+ * to constrain the search to approved hosts.
+ * @returns A normalized Tavily result payload using the default weekly job
+ * search configuration.
  */
 export async function searchTavilyJobs(
   apiKey: string,

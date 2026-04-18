@@ -339,6 +339,11 @@ const defaultProviderSet = new Set<string>(defaultProviders)
  * Resolves the approved ATS domains that Tavily should search for the current
  * provider selection. Falls back to the default provider set when no explicit
  * selection is supplied.
+ *
+ * @param selectedProviders - Optional provider ids chosen by the user. When
+ * omitted or empty, the default provider selection is used.
+ * @returns A deduplicated list of approved hostnames that Tavily should use as
+ * its `include_domains` filter.
  */
 export function resolveJobSearchDomains(selectedProviders?: readonly string[]) {
   const providerSet =

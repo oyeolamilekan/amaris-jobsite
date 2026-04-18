@@ -11,6 +11,11 @@ import { searchQuerySchema } from '../shared/schemas'
 
 /**
  * Normalizes the raw intent string into one of the two supported values.
+ *
+ * @param value - Raw intent text returned by the model.
+ * @returns Either `job_search` or `not_job_search`. Unknown or ambiguous
+ * labels intentionally fall back to `not_job_search` so the pipeline stays
+ * conservative.
  */
 function normalizeIntent(value: string) {
   const normalized = value
@@ -25,6 +30,13 @@ function normalizeIntent(value: string) {
 /**
  * Calls the LLM to classify the user prompt and generate a Tavily Boolean
  * query. Domain scoping is applied when Tavily is called.
+ *
+ * @param prompt - Raw user prompt to classify and convert into a Tavily query.
+ * @param modelId - Optional AI Gateway model id override. When omitted, the
+ * configured default model is used.
+ * @returns An object containing a normalized `intent` label and a trimmed
+ * Tavily query string. Non-job-search responses intentionally return an empty
+ * query string.
  */
 export async function generateSearchQuery(prompt: string, modelId?: string) {
   try {

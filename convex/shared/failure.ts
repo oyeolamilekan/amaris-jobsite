@@ -11,6 +11,14 @@ export const NOT_JOB_SEARCH_SUMMARY =
 export const FAILED_SEARCH_SUMMARY =
   'This search failed before results could be completed. The request was saved for internal debugging.'
 
+/**
+ * Truncates long strings to a bounded length while preserving a readable
+ * trailing ellipsis.
+ *
+ * @param value - The string to shorten.
+ * @param maxLength - Maximum length to retain before appending `...`.
+ * @returns The original string when short enough, otherwise a truncated copy.
+ */
 function truncateText(value: string, maxLength: number) {
   if (value.length <= maxLength) {
     return value
@@ -19,10 +27,27 @@ function truncateText(value: string, maxLength: number) {
   return `${value.slice(0, maxLength).trimEnd()}...`
 }
 
+/**
+ * Truncates raw response text captured from downstream services so failure
+ * traces stay within a safe storage size.
+ *
+ * @param value - Optional raw response body from a failed request.
+ * @returns A bounded response string or `undefined` when no response text was
+ * provided.
+ */
 export function truncateFailureResponse(value: string | undefined) {
   return value ? truncateText(value, MAX_FAILURE_RESPONSE_LENGTH) : undefined
 }
 
+/**
+ * Serializes arbitrary failure metadata into a bounded string that can be saved
+ * on a Convex document.
+ *
+ * @param value - Unknown failure details such as objects, strings, or nested
+ * error metadata.
+ * @returns A serialized and truncated string, or `undefined` when there is no
+ * detail payload to save.
+ */
 export function serializeFailureDetails(value: unknown) {
   if (value === undefined || value === null) {
     return undefined
@@ -42,6 +67,10 @@ export function serializeFailureDetails(value: unknown) {
   }
 }
 
+/**
+ * Error type used to retain pipeline-stage context and optional downstream
+ * response metadata as failures move through the search stack.
+ */
 export class SearchStageError extends Error {
   readonly stage: SearchFailureStage
   readonly underlyingErrorName?: string
@@ -78,6 +107,10 @@ export class SearchStageError extends Error {
 
 /**
  * Strips keys with `undefined` values from a plain object.
+ *
+ * @param obj - Plain object that may include optional fields.
+ * @returns A shallow copy with `undefined` fields removed so it can be safely
+ * serialized and persisted.
  */
 function stripUndefined<T extends Record<string, unknown>>(obj: T): T {
   return Object.fromEntries(
@@ -87,6 +120,13 @@ function stripUndefined<T extends Record<string, unknown>>(obj: T): T {
 
 /**
  * Builds a serializable failure trace from any caught error.
+ *
+ * @param error - The caught error or non-error thrown value.
+ * @param fallbackStage - Stage label to use when the error itself does not
+ * carry stage information.
+ * @param tavilyRequestId - Optional Tavily request id to attach when the
+ * underlying error did not already carry one.
+ * @returns A plain object safe to persist in `searchRuns.failureTrace`.
  */
 export function toFailureTrace(
   error: unknown,

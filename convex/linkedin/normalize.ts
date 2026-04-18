@@ -5,7 +5,9 @@ import { MAX_LINKEDIN_PEOPLE_RESULTS } from '../shared/constants'
  * persisted for a job.
  *
  * @param people - Structured LinkedIn people candidates from the AI layer.
- * @returns Persistable LinkedIn people results with stable ranking.
+ * @returns Persistable LinkedIn people results with stable ranking, duplicate
+ * profile URLs removed, and the list capped to
+ * `MAX_LINKEDIN_PEOPLE_RESULTS`.
  */
 export function normalizeLinkedInPeople(
   people: Array<{

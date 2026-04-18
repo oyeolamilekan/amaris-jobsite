@@ -17,6 +17,11 @@ import { searchTavilyJobs } from '../shared/tavily'
 /**
  * Classifies the prompt and generates a Tavily query via a single LLM call.
  * Domain filters are applied later at the Tavily request layer.
+ *
+ * @param prompt - Raw user prompt to classify.
+ * @param modelId - Optional AI model override for the classification call.
+ * @returns The normalized intent and query payload produced by
+ * `generateSearchQuery(...)`.
  */
 export async function classifyAndBuildQuery(prompt: string, modelId?: string) {
   return generateSearchQuery(prompt, modelId)
@@ -25,6 +30,16 @@ export async function classifyAndBuildQuery(prompt: string, modelId?: string) {
 /**
  * Runs the core search pipeline: domain-scoped Tavily retrieval → direct
  * mapping to jobs. Returns everything needed to persist a completed search.
+ *
+ * @param prompt - Original user prompt used for query generation and
+ * relevance-aware extraction.
+ * @param tavilyQuery - Final Tavily query string produced by the prompt
+ * classification step.
+ * @param selectedProviders - Optional provider ids used to derive the allowed
+ * domain list. When omitted, the default provider selection is used.
+ * @param modelId - Optional AI model override used during job extraction.
+ * @returns A persistence-ready payload containing the final search summary,
+ * categories, and normalized job list.
  */
 export async function runJobSearchPipeline(
   prompt: string,
@@ -78,6 +93,23 @@ export async function runJobSearchPipeline(
 /**
  * Persists a failed search run. Swallows save errors to avoid masking the
  * original pipeline failure.
+ *
+ * @param ctx - Action context used to persist the failed search outcome.
+ * @param opts - Failure persistence payload from the action layer.
+ * @param opts.prompt - Original user prompt associated with the failed run.
+ * @param opts.isJobSearch - Best-known job-search classification at the moment
+ * of failure.
+ * @param opts.tavilyQuery - Optional generated Tavily query available at the
+ * time the failure occurred.
+ * @param opts.stage - Pipeline stage label used when building the failure
+ * trace.
+ * @param opts.tavilyRequestId - Optional Tavily request id for downstream
+ * debugging.
+ * @param opts.error - Original caught error value.
+ * @param opts.selectedProviders - Optional provider selection captured for the
+ * failed run.
+ * @returns Nothing. Persistence failures are intentionally swallowed so the
+ * original search error is not masked.
  */
 export async function persistFailedSearch(
   ctx: ActionCtx,

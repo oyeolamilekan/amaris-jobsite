@@ -8,7 +8,8 @@ import {
  * query brittle or harder to control.
  *
  * @param value - The raw company or role term.
- * @returns A sanitized term safe for deterministic query construction.
+ * @returns A sanitized term safe for deterministic query construction, with
+ * explicit search operators and brittle punctuation removed.
  */
 function sanitizeQueryTerm(value: string) {
   return value
@@ -24,7 +25,7 @@ function sanitizeQueryTerm(value: string) {
  *
  * @param value - The query term to shorten.
  * @param maxLength - The maximum allowed term length.
- * @returns The shortened term.
+ * @returns The shortened term after a simple hard cutoff and trim.
  */
 function shorten(value: string, maxLength: number) {
   return value.slice(0, maxLength).trim()
