@@ -3,6 +3,7 @@
   "private": true,
   "sideEffects": false,
   "type": "module",
+  "license": "MIT",
   "scripts": {
     "dev": "bunx convex dev --once && concurrently -r \"bun run dev:web\" \"bun run dev:convex\"",
     "dev:web": "vite dev",

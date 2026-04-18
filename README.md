@@ -106,6 +106,10 @@ There is currently **no project test runner configured** in `package.json`.
 - New users default to the `standard` role.
 - The `/lover-side` admin dashboard requires a user with role `admin`.
 
+## License
+
+This project is licensed under the [MIT License](./LICENSE).
+
 ## Contributor notes
 
 - Do not edit generated files such as `src/routeTree.gen.ts` or anything under `convex/_generated/`.
