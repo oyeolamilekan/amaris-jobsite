@@ -5,62 +5,22 @@ import { internal } from '../_generated/api'
 import type { Id } from '../_generated/dataModel'
 import { action } from '../_generated/server'
 import {
-  approvedJobHostFamilies,
-  defaultProviders,
-  MAX_SELECTED_PROVIDERS,
   type SearchProgressStage,
 } from '../shared/constants'
 import {
   checkJobPostingAvailabilityBatch,
+  classifyAndBuildQuery,
+  persistFailedSearch,
+  resolveSelectedProviders,
+  runJobSearchPipeline,
   shouldRecheckJobPosting,
-} from './availability'
+} from './functions'
 import { assertAiGatewayConfigured } from '../shared/env'
 import {
   NOT_JOB_SEARCH_SUMMARY,
   SearchStageError,
   type SearchFailureStage,
 } from '../shared/failure'
-import {
-  classifyAndBuildQuery,
-  persistFailedSearch,
-  runJobSearchPipeline,
-} from './pipeline'
-
-const approvedProviderSet = new Set(
-  approvedJobHostFamilies.map((family) => family.provider),
-)
-
-/**
- * Normalizes an optional provider selection into a validated list of approved
- * provider ids.
- *
- * @param selectedProviders - Optional provider keys from the client. When the
- * array is omitted or empty, the default provider list is used. Duplicate
- * values are removed, unsupported providers are rejected, and selections above
- * `MAX_SELECTED_PROVIDERS` throw.
- * @returns A deduplicated list of approved provider ids.
- */
-function resolveSelectedProviders(selectedProviders?: string[]) {
-  if (!selectedProviders || selectedProviders.length === 0) {
-    return [...defaultProviders]
-  }
-
-  const uniqueSelectedProviders = Array.from(new Set(selectedProviders))
-
-  if (uniqueSelectedProviders.length > MAX_SELECTED_PROVIDERS) {
-    throw new Error(`You can select up to ${MAX_SELECTED_PROVIDERS} job boards.`)
-  }
-
-  const invalidProvider = uniqueSelectedProviders.find(
-    (provider) => !approvedProviderSet.has(provider),
-  )
-
-  if (invalidProvider) {
-    throw new Error('Unsupported job board selection.')
-  }
-
-  return uniqueSelectedProviders
-}
 
 /**
  * Main action entrypoint for a user-submitted search. Classifies the prompt
@@ -101,7 +61,7 @@ export const submitSearch = action({
       extra?: { searchId?: Id<'searchRuns'>; error?: string },
     ) {
       if (!progressId) return
-      await ctx.runMutation(internal.search.progress.updateSearchProgress, {
+      await ctx.runMutation(internal.search.mutations.updateSearchProgress, {
         progressId,
         stage,
         ...extra,
@@ -118,7 +78,7 @@ export const submitSearch = action({
 
       // 0. Read admin AI model setting
       const settings = await ctx.runQuery(
-        internal.admin.settings.getSettingsInternal,
+        internal.admin.queries.getSettingsInternal,
         {},
       )
       const modelId = settings.aiModel
@@ -132,7 +92,7 @@ export const submitSearch = action({
         stage = 'search-persistence'
         await reportProgress('saving')
         const searchId = await ctx.runMutation(
-          internal.search.queries.saveSearchOutcome,
+          internal.search.mutations.saveSearchOutcome,
           {
             prompt,
             isJobSearch: false,
@@ -163,7 +123,7 @@ export const submitSearch = action({
       stage = 'search-persistence'
       await reportProgress('saving')
       const searchId = await ctx.runMutation(
-        internal.search.queries.saveSearchOutcome,
+        internal.search.mutations.saveSearchOutcome,
         {
           prompt,
           isJobSearch: true,
@@ -298,7 +258,7 @@ export const refreshSearchResultsAvailability = action({
     })
 
     const result = await ctx.runMutation(
-      internal.search.queries.applySearchAvailabilityRefresh,
+      internal.search.mutations.applySearchAvailabilityRefresh,
       {
         searchId: args.searchId,
         checkedJobs,

@@ -8,23 +8,21 @@
  * @module
  */
 
-import type * as admin_settings from "../admin/settings.js";
+import type * as admin_functions from "../admin/functions.js";
+import type * as admin_mutations from "../admin/mutations.js";
+import type * as admin_queries from "../admin/queries.js";
 import type * as auth from "../auth.js";
 import type * as http from "../http.js";
 import type * as linkedin_actions from "../linkedin/actions.js";
-import type * as linkedin_normalize from "../linkedin/normalize.js";
-import type * as linkedin_parse from "../linkedin/parse.js";
+import type * as linkedin_constants from "../linkedin/constants.js";
+import type * as linkedin_functions from "../linkedin/functions.js";
+import type * as linkedin_mutations from "../linkedin/mutations.js";
 import type * as linkedin_queries from "../linkedin/queries.js";
-import type * as linkedin_queryBuilder from "../linkedin/queryBuilder.js";
 import type * as search_actions from "../search/actions.js";
-import type * as search_availability from "../search/availability.js";
-import type * as search_extract from "../search/extract.js";
-import type * as search_facets from "../search/facets.js";
-import type * as search_normalize from "../search/normalize.js";
-import type * as search_pipeline from "../search/pipeline.js";
-import type * as search_progress from "../search/progress.js";
+import type * as search_constants from "../search/constants.js";
+import type * as search_functions from "../search/functions.js";
+import type * as search_mutations from "../search/mutations.js";
 import type * as search_queries from "../search/queries.js";
-import type * as search_summary from "../search/summary.js";
 import type * as shared_constants from "../shared/constants.js";
 import type * as shared_env from "../shared/env.js";
 import type * as shared_failure from "../shared/failure.js";
@@ -41,23 +39,21 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
-  "admin/settings": typeof admin_settings;
+  "admin/functions": typeof admin_functions;
+  "admin/mutations": typeof admin_mutations;
+  "admin/queries": typeof admin_queries;
   auth: typeof auth;
   http: typeof http;
   "linkedin/actions": typeof linkedin_actions;
-  "linkedin/normalize": typeof linkedin_normalize;
-  "linkedin/parse": typeof linkedin_parse;
+  "linkedin/constants": typeof linkedin_constants;
+  "linkedin/functions": typeof linkedin_functions;
+  "linkedin/mutations": typeof linkedin_mutations;
   "linkedin/queries": typeof linkedin_queries;
-  "linkedin/queryBuilder": typeof linkedin_queryBuilder;
   "search/actions": typeof search_actions;
-  "search/availability": typeof search_availability;
-  "search/extract": typeof search_extract;
-  "search/facets": typeof search_facets;
-  "search/normalize": typeof search_normalize;
-  "search/pipeline": typeof search_pipeline;
-  "search/progress": typeof search_progress;
+  "search/constants": typeof search_constants;
+  "search/functions": typeof search_functions;
+  "search/mutations": typeof search_mutations;
   "search/queries": typeof search_queries;
-  "search/summary": typeof search_summary;
   "shared/constants": typeof shared_constants;
   "shared/env": typeof shared_env;
   "shared/failure": typeof shared_failure;

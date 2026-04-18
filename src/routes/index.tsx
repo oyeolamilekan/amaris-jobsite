@@ -147,7 +147,7 @@ export const Route = createFileRoute('/')({
 
 function HomePage() {
   const navigate = useNavigate()
-  const initSearch = useMutation(api.search.progress.initSearch)
+  const initSearch = useMutation(api.search.mutations.initSearch)
   const submitSearch = useAction(api.search.actions.submitSearch)
 
   const [query, setQuery] = useState('')

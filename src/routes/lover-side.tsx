@@ -510,9 +510,9 @@ function AdminPage() {
 
 function SettingsContent() {
   const { data: settings } = useQuery(
-    convexQuery(api.admin.settings.getSettings, {}),
+    convexQuery(api.admin.queries.getSettings, {}),
   )
-  const updateAiModel = useConvexMutation(api.admin.settings.updateAiModel)
+  const updateAiModel = useConvexMutation(api.admin.mutations.updateAiModel)
   const [selectedModel, setSelectedModel] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)

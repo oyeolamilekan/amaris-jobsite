@@ -9,9 +9,11 @@ import {
   DEFAULT_LINKEDIN_PEOPLE_SEARCH_DEPTH,
 } from '../shared/constants'
 import { getSearchRuntimeConfig } from '../shared/env'
-import { structureLinkedInPeopleResults } from './parse'
-import { normalizeLinkedInPeople } from './normalize'
-import { buildLinkedInPeopleSearchQuery } from './queryBuilder'
+import {
+  buildLinkedInPeopleSearchQuery,
+  normalizeLinkedInPeople,
+  structureLinkedInPeopleResults,
+} from './functions'
 import { searchTavily } from '../shared/tavily'
 
 /**
@@ -56,7 +58,7 @@ export const ensureLinkedInPeopleForJob = action({
     console.log(query)
 
     const searchId: Id<'linkedinPeopleSearches'> = await ctx.runMutation(
-      internal.linkedin.queries.saveLinkedInPeopleSearch,
+      internal.linkedin.mutations.saveLinkedInPeopleSearch,
       {
         jobResultId: args.jobResultId,
         company: job.company,
@@ -75,7 +77,7 @@ export const ensureLinkedInPeopleForJob = action({
 
     if (tavilyResults.results.length === 0) {
       await ctx.runMutation(
-        internal.linkedin.queries.updateLinkedInPeopleSearchStatus,
+        internal.linkedin.mutations.updateLinkedInPeopleSearchStatus,
         {
           searchId,
           status: 'no_results',
@@ -89,7 +91,7 @@ export const ensureLinkedInPeopleForJob = action({
     }
 
     await ctx.runMutation(
-      internal.linkedin.queries.updateLinkedInPeopleSearchStatus,
+      internal.linkedin.mutations.updateLinkedInPeopleSearchStatus,
       {
         searchId,
         status: 'enriching',
@@ -100,7 +102,7 @@ export const ensureLinkedInPeopleForJob = action({
     const structuredResults = structureLinkedInPeopleResults(tavilyResults)
 
     const people = normalizeLinkedInPeople(structuredResults.people)
-    await ctx.runMutation(internal.linkedin.queries.saveLinkedInPeopleSearch, {
+    await ctx.runMutation(internal.linkedin.mutations.saveLinkedInPeopleSearch, {
       jobResultId: args.jobResultId,
       company: job.company,
       jobTitle: job.title,

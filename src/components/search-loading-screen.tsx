@@ -65,7 +65,7 @@ export function SearchLoadingScreen({
   query,
   progressId,
 }: SearchLoadingScreenProps) {
-  const progress = useQuery(api.search.progress.getSearchProgress, {
+  const progress = useQuery(api.search.queries.getSearchProgress, {
     progressId,
   })
 
