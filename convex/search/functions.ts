@@ -6,7 +6,7 @@ import {
 } from 'ai'
 import { internal } from '../_generated/api'
 import type { Id } from '../_generated/dataModel'
-import type { ActionCtx, MutationCtx, QueryCtx } from '../_generated/server'
+import type { ActionCtx, QueryCtx } from '../_generated/server'
 import {
   DEFAULT_ADMIN_SEARCH_LIMIT,
   JOB_AVAILABILITY_CHECK_TIMEOUT_MS,
@@ -79,7 +79,9 @@ export function resolveSelectedProviders(selectedProviders?: string[]) {
   const uniqueSelectedProviders = Array.from(new Set(selectedProviders))
 
   if (uniqueSelectedProviders.length > MAX_SELECTED_PROVIDERS) {
-    throw new Error(`You can select up to ${MAX_SELECTED_PROVIDERS} job boards.`)
+    throw new Error(
+      `You can select up to ${MAX_SELECTED_PROVIDERS} job boards.`,
+    )
   }
 
   const invalidProvider = uniqueSelectedProviders.find(
@@ -674,8 +676,10 @@ function parseHostname(url: string) {
  * available.
  */
 function hasUnavailableMarker(text: string, hostname: string) {
-  return [...GENERIC_UNAVAILABLE_PATTERNS, ...getUnavailablePatternsForHost(hostname)]
-    .some((pattern) => pattern.test(text))
+  return [
+    ...GENERIC_UNAVAILABLE_PATTERNS,
+    ...getUnavailablePatternsForHost(hostname),
+  ].some((pattern) => pattern.test(text))
 }
 
 /**
@@ -720,8 +724,10 @@ export async function checkJobPostingAvailability(
       redirect: 'follow',
       signal: AbortSignal.timeout(JOB_AVAILABILITY_CHECK_TIMEOUT_MS),
       headers: {
-        Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-        'User-Agent': 'Mozilla/5.0 (compatible; AmarisBot/1.0; +https://amaris.app)',
+        Accept:
+          'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'User-Agent':
+          'Mozilla/5.0 (compatible; AmarisBot/1.0; +https://amaris.app)',
       },
     })
   } catch (error) {
@@ -855,11 +861,7 @@ export async function runJobSearchPipeline(
     (candidate) => candidate.availabilityCheck,
   )
 
-  const extractions = await extractAllJobDetails(
-    liveResults,
-    prompt,
-    modelId,
-  )
+  const extractions = await extractAllJobDetails(liveResults, prompt, modelId)
 
   const jobs = tavilyResultsToJobs(
     liveResults,
