@@ -73,20 +73,20 @@ export function SearchLoadingScreen({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/95 px-4 py-8 backdrop-blur-sm sm:px-6 lg:px-8">
-      <Card className="w-full max-w-4xl rounded-[2rem] border border-white/10 bg-[#1b1b1c] text-white shadow-2xl">
+      <Card className="w-full max-w-4xl rounded-[2rem] border border-border bg-card text-card-foreground shadow-2xl">
         <CardHeader className="gap-4 pb-2">
           <div className="space-y-3">
             <CardTitle className="text-3xl sm:text-4xl">
               Finding the best matches for you
             </CardTitle>
-            <CardDescription className="max-w-2xl text-sm leading-6 text-[#a1a1aa] sm:text-base">
+            <CardDescription className="max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
               We&apos;re processing your request, searching supported job hosts,
               and preparing structured results.
             </CardDescription>
           </div>
 
           {query ? (
-            <div className="rounded-[1.5rem] border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/90 sm:px-5">
+            <div className="rounded-[1.5rem] border border-border bg-muted px-4 py-3 text-sm text-foreground sm:px-5">
               &quot;{query}&quot;
             </div>
           ) : null}
@@ -101,20 +101,20 @@ export function SearchLoadingScreen({
               <div
                 className={cn(
                   'rounded-[1.5rem] border p-4 transition-all duration-500',
-                  state === 'active' && 'border-white/20 bg-white/10',
+                  state === 'active' && 'border-border bg-muted',
                   state === 'completed' &&
                     'border-emerald-500/20 bg-emerald-500/5',
                   state === 'pending' &&
-                    'border-white/5 bg-white/[0.02] opacity-50',
+                    'border-border/50 bg-muted/30 opacity-50',
                 )}
                 key={step.title}
               >
                 <div
                   className={cn(
                     'mb-3 inline-flex size-10 items-center justify-center rounded-full transition-colors duration-500',
-                    state === 'active' && 'bg-white/15',
+                    state === 'active' && 'bg-muted',
                     state === 'completed' && 'bg-emerald-500/15',
-                    state === 'pending' && 'bg-white/5',
+                    state === 'pending' && 'bg-muted/30',
                   )}
                 >
                   {state === 'active' ? (
@@ -129,7 +129,7 @@ export function SearchLoadingScreen({
                   )}
                 </div>
                 <h2 className="text-base font-medium">{step.title}</h2>
-                <p className="mt-2 text-sm leading-6 text-[#a1a1aa]">
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">
                   {step.description}
                 </p>
               </div>
