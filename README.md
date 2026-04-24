@@ -13,9 +13,14 @@ Amaris is an AI-assisted job search app built with **TanStack Start** on the fro
 - turns free-form job prompts into search-ready queries
 - searches approved ATS and careers-site providers through Tavily
 - extracts and ranks saved jobs with AI-assisted metadata
+- shows an immediate spinner on the Search button and a step-by-step loading screen while the search runs
+- displays skeleton shimmer placeholders on the results page while job availability is being refreshed and data is loading
 - rechecks saved job links before showing results
+- sets the page `<title>` server-side from the search query for correct sharing previews and SEO crawlers
 - lets users open a LinkedIn people dialog for a saved job/company
 - exposes an admin dashboard for search runs, LinkedIn lookups, and AI model settings
+- provides a scroll-to-top button on the results page (appears after scrolling, fixed bottom-right)
+- links to the GitHub repository from the results page header
 
 ## Architecture at a glance
 
@@ -28,10 +33,22 @@ Amaris is an AI-assisted job search app built with **TanStack Start** on the fro
 ## End-to-end search flow
 
 1. The user submits a prompt from `/`.
-2. The frontend creates a `searchProgress` record and starts `api.search.actions.submitSearch`.
+2. The Search button shows a spinner immediately; the frontend creates a `searchProgress` record and starts `api.search.actions.submitSearch`. A step-by-step `SearchLoadingScreen` overlay appears once the progress record is ready.
 3. The backend classifies the prompt, runs the provider-scoped Tavily search, filters dead links, extracts structured metadata, and saves the search run plus job results.
-4. The frontend navigates to `/results`, refreshes saved job availability, and loads the saved search data.
+4. The frontend navigates to `/results`. The page title is server-rendered from the search query for correct sharing and SEO. Skeleton shimmer placeholders are shown while saved job availability is refreshed, then real results replace them.
 5. If the user opens the LinkedIn dialog, the frontend triggers `api.linkedin.actions.ensureLinkedInPeopleForJob` and reads the cached result back through a query.
+
+## Search quality
+
+The Tavily retrieval layer is tuned to maximise the candidate pool and signal quality before AI extraction:
+
+| Setting | Value | Reason |
+| --- | --- | --- |
+| `max_results` | 20 | larger candidate pool survives availability filtering and deduplication; final output is still capped at 10 |
+| `time_range` | `month` | captures live listings published up to 4 weeks ago, not just the last 7 days |
+| LLM query char limit | 380 | gives the model more room before it drops location or technology clauses |
+| Location exclusions | conditional | `-India -USA` etc. are only appended when a specific region is detected; global searches are not filtered |
+| Optional boost phrase | ATS page signals | `"job description" OR "apply now"` replaces social-media phrases that pulled in off-target results |
 
 ## Repository layout
 

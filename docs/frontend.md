@@ -80,7 +80,7 @@ The frontend uses a few distinct patterns depending on the job:
 | Pattern | Use it for | Example in this repo |
 | --- | --- | --- |
 | `useSuspenseQuery(convexQuery(...))` | page data that benefits from React Query caching and SSR integration | `results-page-content.tsx` loading `api.search.queries.getSearchResultPage` |
-| `useQuery(convexQuery(...))` from React Query | non-suspense cached reads | `linkedin-people-dialog.tsx`, admin queries in `lover-side.tsx` |
+| `useQuery(convexQuery(...))` from React Query | non-suspense cached reads; also used to warm the React Query cache before a suspense-enabled component mounts | `results-page-content.tsx` cache warming in `SavedResultsPage`; `linkedin-people-dialog.tsx`; admin queries in `lover-side.tsx` |
 | `useMutation(api...)` from `convex/react` | direct Convex mutations | `index.tsx` and `results-shell.tsx` calling `initSearch` |
 | `useAction(api...)` from `convex/react` | long-running server workflows | search submit, availability refresh, LinkedIn people search |
 | `useQuery(api...)` from `convex/react` | live subscription-style reads | `search-loading-screen.tsx` subscribing to `getSearchProgress` |
@@ -93,23 +93,29 @@ The main user flow spans the landing page, loading overlay, and results page.
 1. **The landing page collects a prompt and provider filters.**  
    [`src/routes/index.tsx`](../src/routes/index.tsx) owns the initial form state.
 
-2. **The page creates a progress record.**  
-   It calls `useMutation(api.search.progress.initSearch)` before kicking off the expensive action.
+2. **The Search button shows a spinner immediately.**  
+   `isSubmitting` is set to `true` before `initSearch` is awaited, so the button disables and shows a `LoaderCircle` icon from the very first tick.
 
-3. **The page starts the backend workflow.**  
+3. **The page creates a progress record.**  
+   It calls `useMutation(api.search.mutations.initSearch)` to insert a `searchProgress` document. Once the `progressId` is returned, `SearchLoadingScreen` mounts.
+
+4. **The page starts the backend workflow.**  
    It then calls `useAction(api.search.actions.submitSearch)` with the prompt, `progressId`, and selected providers.
 
-4. **The loading overlay subscribes to progress.**  
-   [`src/components/search-loading-screen.tsx`](../src/components/search-loading-screen.tsx) uses `useQuery(api.search.progress.getSearchProgress, { progressId })` from `convex/react` to show live stage updates.
+5. **The loading overlay subscribes to progress.**  
+   [`src/components/search-loading-screen.tsx`](../src/components/search-loading-screen.tsx) uses `useQuery(api.search.queries.getSearchProgress, { progressId })` from `convex/react` to show live stage updates.
 
-5. **The app navigates to `/results`.**  
+6. **The app navigates to `/results`.**  
    The action returns `searchId`, and the route receives it through the query string.
 
-6. **The results page refreshes saved job availability.**  
-   [`src/components/results-page-content.tsx`](../src/components/results-page-content.tsx) first calls `api.search.actions.refreshSearchResultsAvailability`.
+7. **The results route sets the page title server-side.**  
+   `loaderDeps` extracts `q` from validated search params; `loader` returns `{ q }`; `head` uses `loaderData.q` to produce `"<query>" — Amaris` in the SSR-rendered `<title>` and `og:title` tags.
 
-7. **The page loads the saved result set.**  
-   After the refresh, it reads `api.search.queries.getSearchResultPage` through `convexQuery(...)`.
+8. **The results page warms the React Query cache and refreshes saved job availability.**  
+   [`src/components/results-page-content.tsx`](../src/components/results-page-content.tsx) calls a non-suspending `useQuery(convexQuery(api.search.queries.getSearchResultPage, ...))` immediately on mount so data populates the cache while `api.search.actions.refreshSearchResultsAvailability` runs. Skeleton shimmer placeholders are displayed during both the refresh phase and any subsequent Suspense boundary.
+
+9. **The page loads the saved result set.**  
+   After the refresh, `SavedResultsData` reads `api.search.queries.getSearchResultPage` through `useSuspenseQuery(convexQuery(...))`. Because the cache was already warmed, this typically resolves without a visible flash.
 
 ## LinkedIn people dialog flow
 

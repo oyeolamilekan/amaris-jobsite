@@ -107,9 +107,11 @@ sequenceDiagram
     participant M as AI Gateway
     participant D as searchRuns + jobResults
 
-    U->>F: Enter prompt and submit search
+    U->>F: Enter prompt and click Search
+    Note over F: Button shows spinner immediately (isSubmitting = true)
     F->>P: initSearch(prompt)
     P-->>F: progressId
+    Note over F: SearchLoadingScreen overlay mounts
     F->>A: submitSearch(prompt, progressId, selectedProviders)
     A->>P: update stage = analyzing
     A->>M: classify prompt and build search query
@@ -119,13 +121,19 @@ sequenceDiagram
         A-->>F: searchId
     else Valid job search
         A->>P: update stage = searching
-        A->>T: retrieve provider-scoped listings
+        A->>T: retrieve provider-scoped listings (max 20, time_range month)
         A->>M: extract structured job metadata per result
         A->>D: save searchRuns + jobResults
         A->>P: update stage = completed
         A-->>F: searchId
     end
-    F->>D: getSearchResultPage(searchId)
+    Note over F: Navigate to /results — SSR title set from query
+    F->>D: warm cache with non-suspending useQuery (getSearchResultPage)
+    F->>A: refreshSearchResultsAvailability(searchId)
+    Note over F: Skeleton shimmer shown during refresh
+    A->>D: prune dead job links
+    A-->>F: refresh complete
+    F->>D: getSearchResultPage(searchId) via useSuspenseQuery
     D-->>F: saved search + ranked jobs
 ```
 

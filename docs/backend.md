@@ -92,7 +92,7 @@ The main search flow starts in [`convex/search/actions.ts`](../convex/search/act
    [`convex/search/pipeline.ts`](../convex/search/pipeline.ts) turns the selected provider list into a list of allowed domains using `resolveJobSearchDomains(...)` from [`convex/shared/constants.ts`](../convex/shared/constants.ts).
 
 6. **Tavily retrieves live job pages.**  
-   [`convex/shared/tavily.ts`](../convex/shared/tavily.ts) sends the generated query to Tavily, applies the provider-domain filter, and normalizes the response.
+   [`convex/shared/tavily.ts`](../convex/shared/tavily.ts) sends the generated query to Tavily with `search_depth: advanced`, `time_range: month`, and `max_results: 20`. The provider-domain filter is applied via `include_domains`. Up to 20 candidates enter the pipeline; the final saved output is capped at 10 after filtering and deduplication.
 
 7. **Dead job links are filtered out early.**  
    [`convex/search/availability.ts`](../convex/search/availability.ts) directly fetches each result URL and removes clear 404/expired/closed postings before extraction continues.
@@ -118,6 +118,18 @@ When the pipeline throws:
 - the `searchProgress` record is updated to `failed`
 - the backend attempts to save a failed `searchRuns` row
 - the client still gets a user-facing error message instead of a silent fallback
+
+### Query generation and Tavily tuning
+
+The LLM query is generated in [`convex/search/facets.ts`](../convex/search/facets.ts) using the system prompt in [`convex/shared/prompts.ts`](../convex/shared/prompts.ts). Several tuning decisions improve recall and precision:
+
+| Setting | Value | Reason |
+| --- | --- | --- |
+| `max_results` | 20 | larger candidate pool survives availability filtering; final output still capped at 10 |
+| `time_range` | `month` | captures live listings up to 4 weeks old instead of just 7 days |
+| LLM query char limit | 380 | gives the model more space before dropping location or technology clauses |
+| Location exclusions | conditional | `-India -USA` etc. are appended only when a specific region is detected in the prompt; global searches are not filtered |
+| Boost phrase | ATS page signals | `"job description" OR "apply now"` replaces social-media phrases that pulled in off-target results |
 
 ## Saved-results refresh flow
 
