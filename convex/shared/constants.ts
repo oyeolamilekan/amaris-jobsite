@@ -139,7 +139,7 @@ export const DEFAULT_TAVILY_SEARCH_DEPTH = 'advanced' as const
 /**
  * Default Tavily result count for the main job search flow.
  */
-export const DEFAULT_TAVILY_MAX_RESULTS = 10
+export const DEFAULT_TAVILY_MAX_RESULTS = 20
 
 /**
  * Timeout for direct job-post availability checks.

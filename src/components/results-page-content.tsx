@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
+import { Suspense, useEffect, useState } from 'react'
+import { useQuery, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
 import { convexQuery } from '@convex-dev/react-query'
 import { useAction } from 'convex/react'
 import type { Id } from '../../convex/_generated/dataModel'
@@ -14,9 +14,11 @@ import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from '~/components/ui/card'
+import { Skeleton } from '~/components/ui/skeleton'
 
 function getErrorMessage(error: unknown) {
   return error instanceof Error ? error.message : 'Something went wrong.'
@@ -53,6 +55,80 @@ function ResultsSummaryCards({
         </CardHeader>
       </Card>
     </div>
+  )
+}
+
+function ResultsSummaryCardsSkeleton() {
+  return (
+    <div className="grid gap-3 md:grid-cols-2">
+      <Card size="sm">
+        <CardHeader>
+          <Skeleton className="h-5 w-32" />
+          <Skeleton className="mt-1 h-4 w-full" />
+          <Skeleton className="h-4 w-3/4" />
+        </CardHeader>
+      </Card>
+      <Card size="sm">
+        <CardHeader>
+          <Skeleton className="h-5 w-40" />
+          <Skeleton className="mt-1 h-4 w-full" />
+          <Skeleton className="h-4 w-2/3" />
+        </CardHeader>
+      </Card>
+    </div>
+  )
+}
+
+function JobResultCardSkeleton() {
+  return (
+    <Card className="rounded-[1.5rem]">
+      <CardHeader>
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 flex-1 space-y-2">
+            <Skeleton className="h-5 w-3/4" />
+            <Skeleton className="h-4 w-1/2" />
+          </div>
+          <Skeleton className="h-6 w-20 shrink-0 rounded-full" />
+        </div>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-4">
+        <div className="space-y-2 rounded-[1.25rem] bg-muted/50 p-4">
+          <Skeleton className="h-3 w-16" />
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-2/3" />
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Skeleton className="h-6 w-20 rounded-full" />
+          <Skeleton className="h-6 w-16 rounded-full" />
+          <Skeleton className="h-6 w-24 rounded-full" />
+        </div>
+      </CardContent>
+      <CardFooter className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+        <div className="flex flex-wrap items-center gap-4">
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-4 w-20" />
+          <Skeleton className="h-4 w-16" />
+        </div>
+        <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
+          <Skeleton className="h-9 w-32 rounded-full" />
+          <Skeleton className="h-9 w-28 rounded-full" />
+        </div>
+      </CardFooter>
+    </Card>
+  )
+}
+
+function ResultsPageSkeleton() {
+  return (
+    <>
+      <ResultsSummaryCardsSkeleton />
+      <div className="flex flex-col gap-4">
+        <JobResultCardSkeleton />
+        <JobResultCardSkeleton />
+        <JobResultCardSkeleton />
+      </div>
+    </>
   )
 }
 
@@ -284,6 +360,9 @@ export function SavedResultsPage({
   const refreshSearchResultsAvailability = useAction(
     api.search.actions.refreshSearchResultsAvailability,
   )
+  // Warm the React Query / Convex cache while the availability refresh runs so
+  // that SavedResultsData's useSuspenseQuery finds data ready on first mount.
+  useQuery(convexQuery(api.search.queries.getSearchResultPage, { searchId }))
   const [isRefreshingAvailability, setIsRefreshingAvailability] = useState(true)
   const [availabilityRefreshError, setAvailabilityRefreshError] =
     useState<string | null>(null)
@@ -328,24 +407,28 @@ export function SavedResultsPage({
             : 'Refreshing saved results'
         }
       >
-        <Card className="rounded-[1.5rem]">
-          <CardHeader>
-            <CardTitle>Checking saved job links</CardTitle>
-            <CardDescription>
-              We&apos;re opening the saved posting URLs and removing any roles
-              that are no longer live.
-            </CardDescription>
-          </CardHeader>
-        </Card>
+        <ResultsPageSkeleton />
       </ResultsShell>
     )
   }
 
   return (
-    <SavedResultsData
-      availabilityRefreshError={availabilityRefreshError}
-      fallbackQuery={fallbackQuery}
-      searchId={searchId}
-    />
+    <Suspense
+      fallback={
+        <ResultsShell
+          description="Loading your search results."
+          initialQuery={fallbackQuery}
+          title={fallbackQuery ? `Results for "${fallbackQuery}"` : 'Your results'}
+        >
+          <ResultsPageSkeleton />
+        </ResultsShell>
+      }
+    >
+      <SavedResultsData
+        availabilityRefreshError={availabilityRefreshError}
+        fallbackQuery={fallbackQuery}
+        searchId={searchId}
+      />
+    </Suspense>
   )
 }

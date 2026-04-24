@@ -2,7 +2,7 @@ import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useAction, useMutation } from 'convex/react'
-import { Search } from 'lucide-react'
+import { LoaderCircle, Search } from 'lucide-react'
 import { api } from '../../convex/_generated/api'
 import type { Id } from '../../convex/_generated/dataModel'
 import { SearchLoadingScreen } from '~/components/search-loading-screen'
@@ -171,11 +171,11 @@ function HomePage() {
     }
 
     setSubmitError(null)
+    setIsSubmitting(true)
 
     try {
       const id = await initSearch({ prompt: trimmed })
       setProgressId(id)
-      setIsSubmitting(true)
 
       const result = await submitSearch({
         prompt: trimmed,
@@ -252,8 +252,12 @@ function HomePage() {
                 size="lg"
                 type="submit"
               >
-                <Search data-icon="inline-start" />
-                Search
+                {isSubmitting ? (
+                  <LoaderCircle className="animate-spin" data-icon="inline-start" />
+                ) : (
+                  <Search data-icon="inline-start" />
+                )}
+                {isSubmitting ? 'Searching…' : 'Search'}
               </Button>
             </div>
 

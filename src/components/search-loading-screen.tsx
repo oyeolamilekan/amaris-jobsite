@@ -76,7 +76,7 @@ export function SearchLoadingScreen({
       <Card className="w-full max-w-4xl rounded-[2rem] border border-border bg-card text-card-foreground shadow-2xl">
         <CardHeader className="gap-4 pb-2">
           <div className="space-y-3">
-            <CardTitle className="text-3xl sm:text-4xl">
+            <CardTitle className="text-2xl sm:text-3xl lg:text-4xl">
               Finding the best matches for you
             </CardTitle>
             <CardDescription className="max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
@@ -92,7 +92,7 @@ export function SearchLoadingScreen({
           ) : null}
         </CardHeader>
 
-        <CardContent className="grid gap-3 pt-4 sm:grid-cols-3">
+        <CardContent className="grid grid-cols-1 gap-3 pt-4 sm:grid-cols-3">
           {steps.map((step, index) => {
             const state = getStepState(index, stage)
             const Icon = state === 'completed' ? Check : step.icon
@@ -100,7 +100,7 @@ export function SearchLoadingScreen({
             return (
               <div
                 className={cn(
-                  'rounded-[1.5rem] border p-4 transition-all duration-500',
+                  'rounded-[1.5rem] border p-3 transition-all duration-500 sm:p-4',
                   state === 'active' && 'border-border bg-muted',
                   state === 'completed' &&
                     'border-emerald-500/20 bg-emerald-500/5',
@@ -109,29 +109,33 @@ export function SearchLoadingScreen({
                 )}
                 key={step.title}
               >
-                <div
-                  className={cn(
-                    'mb-3 inline-flex size-10 items-center justify-center rounded-full transition-colors duration-500',
-                    state === 'active' && 'bg-muted',
-                    state === 'completed' && 'bg-emerald-500/15',
-                    state === 'pending' && 'bg-muted/30',
-                  )}
-                >
-                  {state === 'active' ? (
-                    <LoaderCircle className="size-5 animate-spin" />
-                  ) : (
-                    <Icon
-                      className={cn(
-                        'size-5',
-                        state === 'completed' && 'text-emerald-400',
-                      )}
-                    />
-                  )}
+                <div className="flex items-start gap-3 sm:block">
+                  <div
+                    className={cn(
+                      'inline-flex size-9 shrink-0 items-center justify-center rounded-full transition-colors duration-500 sm:mb-3 sm:size-10',
+                      state === 'active' && 'bg-muted',
+                      state === 'completed' && 'bg-emerald-500/15',
+                      state === 'pending' && 'bg-muted/30',
+                    )}
+                  >
+                    {state === 'active' ? (
+                      <LoaderCircle className="size-5 animate-spin" />
+                    ) : (
+                      <Icon
+                        className={cn(
+                          'size-5',
+                          state === 'completed' && 'text-emerald-400',
+                        )}
+                      />
+                    )}
+                  </div>
+                  <div>
+                    <h2 className="text-sm font-medium sm:text-base">{step.title}</h2>
+                    <p className="mt-1 text-sm leading-6 text-muted-foreground sm:mt-2">
+                      {step.description}
+                    </p>
+                  </div>
                 </div>
-                <h2 className="text-base font-medium">{step.title}</h2>
-                <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                  {step.description}
-                </p>
               </div>
             )
           })}

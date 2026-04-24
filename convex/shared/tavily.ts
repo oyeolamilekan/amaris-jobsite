@@ -174,7 +174,7 @@ export async function searchTavilyJobs(
 ) {
   return await searchTavily(apiKey, query, {
     includeRawContent: true,
-    timeRange: 'week',
+    timeRange: 'month',
     includeDomains: options?.includeDomains,
   })
 }

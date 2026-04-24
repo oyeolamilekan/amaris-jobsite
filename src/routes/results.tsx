@@ -10,23 +10,29 @@ export const Route = createFileRoute('/results')({
     q: typeof search.q === 'string' ? search.q : '',
     searchId: typeof search.searchId === 'string' ? search.searchId : '',
   }),
-  head: () => ({
-    meta: [
-      { title: 'Search Results — Amaris' },
-      {
-        name: 'description',
-        content:
-          'Browse AI-powered job search results aggregated from top job boards in real time.',
-      },
-      { property: 'og:title', content: 'Search Results — Amaris' },
-      {
-        property: 'og:description',
-        content:
-          'Browse AI-powered job search results aggregated from top job boards in real time.',
-      },
-      { name: 'robots', content: 'noindex, follow' },
-    ],
-  }),
+  loaderDeps: ({ search: { q } }) => ({ q }),
+  loader: ({ deps }) => ({ q: deps.q.trim() }),
+  head: ({ loaderData }) => {
+    const q = loaderData?.q
+    const title = q ? `"${q}" — Amaris` : 'Search Results — Amaris'
+    return {
+      meta: [
+        { title },
+        {
+          name: 'description',
+          content:
+            'Browse AI-powered job search results aggregated from top job boards in real time.',
+        },
+        { property: 'og:title', content: title },
+        {
+          property: 'og:description',
+          content:
+            'Browse AI-powered job search results aggregated from top job boards in real time.',
+        },
+        { name: 'robots', content: 'noindex, follow' },
+      ],
+    }
+  },
   component: ResultsPage,
 })
 
