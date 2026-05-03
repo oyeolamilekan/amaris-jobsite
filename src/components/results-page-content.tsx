@@ -1,5 +1,5 @@
 import { Suspense, useEffect, useState } from 'react'
-import { useQuery, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
+import { useQuery, useSuspenseQuery } from '@tanstack/react-query'
 import { convexQuery } from '@convex-dev/react-query'
 import { useAction } from 'convex/react'
 import type { Id } from '../../convex/_generated/dataModel'
@@ -185,47 +185,15 @@ function SavedResultsData({
       searchId,
     }),
   )
-  const queryClient = useQueryClient()
-  const ensureLinkedInPeopleForJob = useAction(
-    api.linkedin.actions.ensureLinkedInPeopleForJob,
-  )
   const [activePeopleJob, setActivePeopleJob] =
     useState<LinkedInPeopleJob | null>(null)
-  const [peopleError, setPeopleError] = useState<string | null>(null)
-  const [loadingPeopleJobId, setLoadingPeopleJobId] =
-    useState<Id<'jobResults'> | null>(null)
 
   function resetPeopleDialog() {
     setActivePeopleJob(null)
-    setPeopleError(null)
-    setLoadingPeopleJobId(null)
   }
 
-  async function handleViewPeople(job: LinkedInPeopleJob) {
+  function handleViewPeople(job: LinkedInPeopleJob) {
     setActivePeopleJob(job)
-    setPeopleError(null)
-    setLoadingPeopleJobId(job._id)
-
-    try {
-      await ensureLinkedInPeopleForJob({
-        jobResultId: job._id,
-      })
-
-      const peopleQuery = convexQuery(
-        api.linkedin.queries.getLinkedInPeopleSearchForJob,
-        {
-          jobResultId: job._id,
-        },
-      )
-
-      await queryClient.invalidateQueries({
-        queryKey: peopleQuery.queryKey,
-      })
-    } catch (error) {
-      setPeopleError(getErrorMessage(error))
-    } finally {
-      setLoadingPeopleJobId(null)
-    }
   }
 
   if (data === null) {
@@ -330,7 +298,7 @@ function SavedResultsData({
         <div className="flex flex-col gap-4">
           {jobs.map((job) => (
             <JobResultCard
-              isPeopleLoading={loadingPeopleJobId === job._id}
+              isPeopleLoading={false}
               job={job}
               key={job._id}
               onViewPeople={handleViewPeople}
@@ -340,8 +308,6 @@ function SavedResultsData({
       )}
 
       <LinkedInPeopleDialog
-        error={peopleError}
-        isLoading={loadingPeopleJobId !== null}
         job={activePeopleJob}
         onOpenChange={(open) => {
           if (!open) {
@@ -364,8 +330,9 @@ export function SavedResultsPage({
   // that SavedResultsData's useSuspenseQuery finds data ready on first mount.
   useQuery(convexQuery(api.search.queries.getSearchResultPage, { searchId }))
   const [isRefreshingAvailability, setIsRefreshingAvailability] = useState(true)
-  const [availabilityRefreshError, setAvailabilityRefreshError] =
-    useState<string | null>(null)
+  const [availabilityRefreshError, setAvailabilityRefreshError] = useState<
+    string | null
+  >(null)
 
   useEffect(() => {
     let isCancelled = false
@@ -418,7 +385,9 @@ export function SavedResultsPage({
         <ResultsShell
           description="Loading your search results."
           initialQuery={fallbackQuery}
-          title={fallbackQuery ? `Results for "${fallbackQuery}"` : 'Your results'}
+          title={
+            fallbackQuery ? `Results for "${fallbackQuery}"` : 'Your results'
+          }
         >
           <ResultsPageSkeleton />
         </ResultsShell>

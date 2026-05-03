@@ -1,6 +1,7 @@
 import { v } from 'convex/values'
 import { internalMutation } from '../_generated/server'
 import {
+  linkedinPeopleSearchModeValidator,
   linkedinPeopleSearchStatusValidator,
   savedLinkedInPersonValidator,
 } from '../shared/validators'
@@ -47,6 +48,7 @@ export const saveLinkedInPeopleSearch = internalMutation({
     jobResultId: v.id('jobResults'),
     company: v.string(),
     jobTitle: v.string(),
+    mode: linkedinPeopleSearchModeValidator,
     status: linkedinPeopleSearchStatusValidator,
     query: v.string(),
     summary: v.string(),
@@ -58,6 +60,7 @@ export const saveLinkedInPeopleSearch = internalMutation({
    * @param args.jobResultId - The saved job this people search belongs to.
    * @param args.company - Company name used for both display and query context.
    * @param args.jobTitle - Source job title shown alongside the people search.
+   * @param args.mode - Search mode used to scope the saved people lookup.
    * @param args.status - Final or intermediate lifecycle state for the saved
    * people search.
    * @param args.query - The LinkedIn-focused Tavily query string that produced
@@ -71,13 +74,16 @@ export const saveLinkedInPeopleSearch = internalMutation({
     const now = Date.now()
     const existing = await ctx.db
       .query('linkedinPeopleSearches')
-      .withIndex('by_jobResultId', (q) => q.eq('jobResultId', args.jobResultId))
+      .withIndex('by_jobResultId_and_mode', (q) =>
+        q.eq('jobResultId', args.jobResultId).eq('mode', args.mode),
+      )
       .first()
 
     const document = {
       jobResultId: args.jobResultId,
       company: args.company,
       jobTitle: args.jobTitle,
+      mode: args.mode,
       status: args.status,
       query: args.query,
       summary: args.summary,

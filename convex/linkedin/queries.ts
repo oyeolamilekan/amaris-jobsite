@@ -2,6 +2,7 @@ import { paginationOptsValidator } from 'convex/server'
 import { v } from 'convex/values'
 import { internalQuery, query } from '../_generated/server'
 import { requireAdminUser } from '../auth'
+import { linkedinPeopleSearchModeValidator } from '../shared/validators'
 import {
   queryAdminLinkedInSearchesByCreatedAt,
   resolveAdminLinkedInLimit,
@@ -48,7 +49,11 @@ export const getAdminLinkedInSearches = query({
           return {
             search,
             jobContext: job
-              ? { title: job.title, company: job.company, location: job.location }
+              ? {
+                  title: job.title,
+                  company: job.company,
+                  location: job.location,
+                }
               : null,
           }
         }),
@@ -105,18 +110,22 @@ export const getAdminLinkedInStats = query({
 export const getLinkedInPeopleSearchForJobInternal = internalQuery({
   args: {
     jobResultId: v.id('jobResults'),
+    mode: linkedinPeopleSearchModeValidator,
   },
   /**
    * @param ctx - Query context used to read cached LinkedIn people searches.
    * @param args - Internal lookup payload for a saved job result.
    * @param args.jobResultId - The `jobResults` document whose cached LinkedIn
    * enrichment should be checked.
+   * @param args.mode - Search mode for the cached lookup.
    * @returns The cached LinkedIn people search document or `null`.
    */
   handler: async (ctx, args) => {
     return await ctx.db
       .query('linkedinPeopleSearches')
-      .withIndex('by_jobResultId', (q) => q.eq('jobResultId', args.jobResultId))
+      .withIndex('by_jobResultId_and_mode', (q) =>
+        q.eq('jobResultId', args.jobResultId).eq('mode', args.mode),
+      )
       .first()
   },
 })
@@ -128,17 +137,21 @@ export const getLinkedInPeopleSearchForJobInternal = internalQuery({
 export const getLinkedInPeopleSearchForJob = query({
   args: {
     jobResultId: v.id('jobResults'),
+    mode: linkedinPeopleSearchModeValidator,
   },
   /**
    * @param ctx - Query context used to read the saved LinkedIn people search.
    * @param args - Public lookup payload for the LinkedIn people dialog.
    * @param args.jobResultId - The `jobResults` document selected in the UI.
+   * @param args.mode - Search mode selected in the LinkedIn people dialog.
    * @returns The saved LinkedIn people search document or `null`.
    */
   handler: async (ctx, args) => {
     return await ctx.db
       .query('linkedinPeopleSearches')
-      .withIndex('by_jobResultId', (q) => q.eq('jobResultId', args.jobResultId))
+      .withIndex('by_jobResultId_and_mode', (q) =>
+        q.eq('jobResultId', args.jobResultId).eq('mode', args.mode),
+      )
       .first()
   },
 })

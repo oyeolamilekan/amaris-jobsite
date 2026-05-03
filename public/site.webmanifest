@@ -1,7 +1,7 @@
 {
   "name": "Amaris",
   "short_name": "Amaris",
-  "description": "Describe your ideal role and search top job boards in real time with AI-powered matching and ranked results.",
+  "description": "Find your next role after a layoff with real-time AI job search and ranked matches from top job boards.",
   "icons": [
     {
       "src": "/android-chrome-192x192.png",

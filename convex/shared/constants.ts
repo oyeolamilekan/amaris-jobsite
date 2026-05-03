@@ -82,6 +82,17 @@ export const linkedinPeopleSearchStatusValues = [
 ] as const
 
 /**
+ * Search modes for LinkedIn people lookups.
+ */
+export const linkedinPeopleSearchModeValues = ['recruiters', 'all'] as const
+
+/**
+ * TypeScript type for LinkedIn people lookup modes.
+ */
+export type LinkedInPeopleSearchMode =
+  (typeof linkedinPeopleSearchModeValues)[number]
+
+/**
  * Supported high-level categories used to bucket saved job results.
  */
 export const jobCategoryValues = [
@@ -178,8 +189,12 @@ export const LINKEDIN_ROLE_TERM_MAX_LENGTH = 50
 export const LINKEDIN_PEOPLE_PRIORITY_TERMS = [
   'technical recruiter',
   'engineering recruiter',
+  'recruiter',
   'talent acquisition',
   'talent partner',
+  'people partner',
+  'hiring manager',
+  'head of talent',
 ] as const
 
 /**

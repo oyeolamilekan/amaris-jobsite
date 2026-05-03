@@ -2,6 +2,7 @@ import { defineSchema, defineTable } from 'convex/server'
 import { v } from 'convex/values'
 import {
   jobResultFields,
+  linkedinPeopleSearchModeValidator,
   linkedinPeopleSearchStatusValidator,
   savedLinkedInPersonValidator,
   rawSearchResultFields,
@@ -62,6 +63,7 @@ export default defineSchema({
     jobResultId: v.id('jobResults'),
     company: v.string(),
     jobTitle: v.string(),
+    mode: v.optional(linkedinPeopleSearchModeValidator),
     status: linkedinPeopleSearchStatusValidator,
     query: v.string(),
     summary: v.string(),
@@ -71,6 +73,7 @@ export default defineSchema({
     updatedAt: v.number(),
   })
     .index('by_jobResultId', ['jobResultId'])
+    .index('by_jobResultId_and_mode', ['jobResultId', 'mode'])
     .index('by_createdAt', ['createdAt']),
   /**
    * Singleton admin settings document for runtime configuration.

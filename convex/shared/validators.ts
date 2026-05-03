@@ -2,9 +2,10 @@ import { v } from 'convex/values'
 import {
   employmentTypeValues,
   jobCategoryValues,
+  linkedinPeopleSearchModeValues,
+  linkedinPeopleSearchStatusValues,
   searchFailureStageValues,
   searchProgressStageValues,
-  linkedinPeopleSearchStatusValues,
   searchStatusValues,
   workArrangementValues,
 } from './constants'
@@ -66,6 +67,14 @@ export const linkedinPeopleSearchStatusValidator = v.union(
   v.literal(linkedinPeopleSearchStatusValues[1]),
   v.literal(linkedinPeopleSearchStatusValues[2]),
   v.literal(linkedinPeopleSearchStatusValues[3]),
+)
+
+/**
+ * Convex validator for LinkedIn people lookup modes.
+ */
+export const linkedinPeopleSearchModeValidator = v.union(
+  v.literal(linkedinPeopleSearchModeValues[0]),
+  v.literal(linkedinPeopleSearchModeValues[1]),
 )
 
 /**

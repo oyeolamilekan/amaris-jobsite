@@ -4,7 +4,9 @@
 User-agent: *
 Allow: /
 Disallow: /admin
+Disallow: /lover-side
 Disallow: /sign-in
+Disallow: /api/auth
 
 # Sitemap
 Sitemap: https://amaris.app/sitemap.xml

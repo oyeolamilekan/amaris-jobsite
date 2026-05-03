@@ -27,6 +27,7 @@ import {
   OG_IMAGE_URL,
   OG_IMAGE_WIDTH,
   SITE_DESCRIPTION,
+  SITE_KEYWORDS,
   SITE_NAME,
   SITE_TITLE,
 } from '~/lib/seo'
@@ -39,17 +40,17 @@ const seoHighlights = [
   {
     title: 'Search top job boards fast',
     description:
-      'Run one prompt across multiple ATS and job-board providers without manually checking each careers page.',
+      'Turn one layoff recovery search prompt into live results across multiple ATS and job-board providers.',
   },
   {
     title: 'Get ranked job matches',
     description:
-      'Amaris evaluates each result against your query so the best-fit roles surface first instead of raw search order.',
+      'Amaris compares each role against your goals, location, seniority, and skills so stronger matches rise first.',
   },
   {
-    title: 'Research the company next',
+    title: 'Move from searching to applying',
     description:
-      'Open the original role page, review the saved summary, and jump into LinkedIn people results for the company.',
+      'Open the original posting, review the saved summary, and research people at the company before you apply.',
   },
 ] as const
 
@@ -57,10 +58,15 @@ const seoFaqItems = [
   {
     question: 'How does Amaris find jobs?',
     answer:
-      'Amaris turns your prompt into a targeted live web search, retrieves listings from supported ATS and job-board providers, and ranks the saved jobs by relevance.',
+      'Amaris turns your prompt into a targeted live web search, retrieves listings from supported ATS and job-board providers, and ranks the saved jobs by relevance so you can focus after a layoff.',
   },
   {
-    question: 'Which job sites does Amaris support?',
+    question: 'Can Amaris help after I was laid off?',
+    answer:
+      'Yes. Amaris is built for focused job searches when you need a new role quickly: describe the work you want, choose the boards to search, and review ranked matches in one place.',
+  },
+  {
+    question: 'Which job boards does Amaris support?',
     answer: `Amaris supports providers such as ${providerNames
       .slice(0, 6)
       .join(', ')}, plus other approved ATS platforms.`,
@@ -78,6 +84,7 @@ export const Route = createFileRoute('/')({
     meta: [
       { title: SITE_TITLE },
       { name: 'description', content: SITE_DESCRIPTION },
+      { name: 'keywords', content: SITE_KEYWORDS.join(', ') },
       { property: 'og:title', content: SITE_TITLE },
       { property: 'og:description', content: SITE_DESCRIPTION },
       { property: 'og:type', content: 'website' },
@@ -126,6 +133,11 @@ export const Route = createFileRoute('/')({
               browserRequirements:
                 'Requires JavaScript and works in modern desktop and mobile browsers.',
               featureList: seoHighlights.map((item) => item.title),
+              audience: {
+                '@type': 'Audience',
+                audienceType:
+                  'People who lost their job and are looking for a new role',
+              },
             },
             {
               '@type': 'FAQPage',
@@ -201,22 +213,22 @@ function HomePage() {
   }
 
   return (
-    <main className="relative flex min-h-screen flex-col items-center justify-center bg-background px-4 text-foreground">
+    <main className="relative flex min-h-screen flex-col items-center bg-background px-4 text-foreground">
       <div className="absolute right-4 top-4 flex items-center gap-2">
         <ThemeToggle />
         <AuthButton />
       </div>
 
-      <div className="flex w-full max-w-5xl flex-col items-center gap-14">
+      <div className="flex w-full max-w-5xl flex-1 flex-col items-center justify-center gap-14 py-24">
         <section className="flex w-full max-w-2xl flex-col items-center gap-8">
           <div className="flex flex-col items-center gap-3 text-center">
             <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
               Amaris
             </h1>
             <p className="max-w-xl text-base text-muted-foreground">
-              AI-powered job search across top ATS and job-board providers. Tell
-              Amaris the role, location, seniority, and stack you want, then get
-              ranked matches in real time.
+              Job search help for people who lost their job and need the next
+              one. Tell Amaris the role, location, seniority, and stack you
+              want, then get ranked matches from top job boards in real time.
             </p>
             <a
               className="inline-flex items-center gap-2 rounded-full border bg-muted/50 px-4 py-1.5 text-sm font-medium transition-colors hover:bg-muted"
@@ -234,8 +246,13 @@ function HomePage() {
                 <path d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0 1 12 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z" />
               </svg>
               <span className="sm:hidden">Star us on GitHub</span>
-              <span className="hidden sm:inline">If this helps your job search, a star means a lot — give us one!</span>
-              <span aria-hidden="true" className="hidden text-muted-foreground sm:inline">
+              <span className="hidden sm:inline">
+                If this helps your job search, a star means a lot — give us one!
+              </span>
+              <span
+                aria-hidden="true"
+                className="hidden text-muted-foreground sm:inline"
+              >
                 →
               </span>
             </a>
@@ -274,7 +291,10 @@ function HomePage() {
                 type="submit"
               >
                 {isSubmitting ? (
-                  <LoaderCircle className="animate-spin" data-icon="inline-start" />
+                  <LoaderCircle
+                    className="animate-spin"
+                    data-icon="inline-start"
+                  />
                 ) : (
                   <Search data-icon="inline-start" />
                 )}

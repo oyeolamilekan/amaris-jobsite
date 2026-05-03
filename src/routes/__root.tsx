@@ -16,7 +16,9 @@ import {
   OG_IMAGE_HEIGHT,
   OG_IMAGE_URL,
   OG_IMAGE_WIDTH,
+  HOME_URL,
   SITE_DESCRIPTION,
+  SITE_KEYWORDS,
   SITE_NAME,
   SITE_TITLE,
 } from '~/lib/seo'
@@ -31,6 +33,7 @@ export const Route = createRootRouteWithContext<{
       { name: 'viewport', content: 'width=device-width, initial-scale=1' },
       { title: SITE_TITLE },
       { name: 'description', content: SITE_DESCRIPTION },
+      { name: 'keywords', content: SITE_KEYWORDS.join(', ') },
       { name: 'application-name', content: SITE_NAME },
       { name: 'apple-mobile-web-app-title', content: SITE_NAME },
 
@@ -39,6 +42,7 @@ export const Route = createRootRouteWithContext<{
       { property: 'og:site_name', content: SITE_NAME },
       { property: 'og:title', content: SITE_TITLE },
       { property: 'og:description', content: SITE_DESCRIPTION },
+      { property: 'og:url', content: HOME_URL },
       { property: 'og:locale', content: 'en_US' },
       { property: 'og:image', content: OG_IMAGE_URL },
       { property: 'og:image:type', content: 'image/png' },
@@ -52,6 +56,7 @@ export const Route = createRootRouteWithContext<{
       { name: 'twitter:description', content: SITE_DESCRIPTION },
       { name: 'twitter:image', content: OG_IMAGE_URL },
       { name: 'twitter:image:alt', content: OG_IMAGE_ALT },
+      { name: 'twitter:url', content: HOME_URL },
 
       // Theme & mobile
       { name: 'theme-color', content: '#09090b' },

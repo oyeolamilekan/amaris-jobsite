@@ -1,7 +1,10 @@
-import { useQuery } from '@tanstack/react-query'
+import { useEffect, useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { convexQuery } from '@convex-dev/react-query'
+import { useAction } from 'convex/react'
 import type { Id } from '../../convex/_generated/dataModel'
 import { api } from '../../convex/_generated/api'
+import type { LinkedInPeopleSearchMode } from '../../convex/shared/constants'
 import {
   ArrowUpRight,
   BriefcaseBusiness,
@@ -27,6 +30,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '~/components/ui/dialog'
+import { ToggleGroup, ToggleGroupItem } from '~/components/ui/toggle-group'
 
 export type LinkedInPeopleJob = {
   _id: Id<'jobResults'>
@@ -36,43 +40,38 @@ export type LinkedInPeopleJob = {
 
 export function LinkedInPeopleDialog({
   job,
-  isLoading,
-  error,
   onOpenChange,
 }: {
   job: LinkedInPeopleJob | null
-  isLoading: boolean
-  error: string | null
   onOpenChange: (open: boolean) => void
 }) {
   if (job === null) {
     return null
   }
 
-  return (
-    <LinkedInPeopleDialogContent
-      error={error}
-      isLoading={isLoading}
-      job={job}
-      onOpenChange={onOpenChange}
-    />
-  )
+  return <LinkedInPeopleDialogContent job={job} onOpenChange={onOpenChange} />
 }
 
 function LinkedInPeopleDialogContent({
   job,
-  isLoading,
-  error,
   onOpenChange,
 }: {
   job: LinkedInPeopleJob
-  isLoading: boolean
-  error: string | null
   onOpenChange: (open: boolean) => void
 }) {
+  const queryClient = useQueryClient()
+  const ensureLinkedInPeopleForJob = useAction(
+    api.linkedin.actions.ensureLinkedInPeopleForJob,
+  )
+  const [selectedMode, setSelectedMode] =
+    useState<LinkedInPeopleSearchMode>('all')
+  const [isRunningSearch, setIsRunningSearch] = useState(false)
+  const [searchError, setSearchError] = useState<string | null>(null)
+
   const { data, isLoading: isQueryLoading } = useQuery(
     convexQuery(api.linkedin.queries.getLinkedInPeopleSearchForJob, {
       jobResultId: job._id,
+      mode: selectedMode,
     }),
   )
 
@@ -80,7 +79,55 @@ function LinkedInPeopleDialogContent({
   const people = peopleSearch?.people ?? []
   const status = peopleSearch?.status ?? null
   const isInProgress = status === 'searching' || status === 'enriching'
-  const isBusy = isLoading || isQueryLoading || isInProgress
+  const shouldAutoRunSearch =
+    peopleSearch === null &&
+    !isQueryLoading &&
+    !isRunningSearch &&
+    !isInProgress &&
+    searchError === null
+  const isBusy =
+    isRunningSearch || isQueryLoading || isInProgress || shouldAutoRunSearch
+  const modeLabel = selectedMode === 'recruiters' ? 'recruiters' : 'people'
+  const modeDescription =
+    selectedMode === 'recruiters'
+      ? 'Recruiters, talent partners, and hiring contacts connected to this company.'
+      : 'Any public LinkedIn profiles associated with this company.'
+
+  async function handleRunSearch() {
+    setSearchError(null)
+    setIsRunningSearch(true)
+
+    try {
+      await ensureLinkedInPeopleForJob({
+        jobResultId: job._id,
+        mode: selectedMode,
+      })
+
+      const peopleQuery = convexQuery(
+        api.linkedin.queries.getLinkedInPeopleSearchForJob,
+        {
+          jobResultId: job._id,
+          mode: selectedMode,
+        },
+      )
+
+      await queryClient.fetchQuery(peopleQuery)
+    } catch (error) {
+      setSearchError(
+        error instanceof Error ? error.message : 'Something went wrong.',
+      )
+    } finally {
+      setIsRunningSearch(false)
+    }
+  }
+
+  useEffect(() => {
+    if (!shouldAutoRunSearch) {
+      return
+    }
+
+    void handleRunSearch()
+  }, [job._id, selectedMode, shouldAutoRunSearch])
 
   return (
     <Dialog onOpenChange={onOpenChange} open>
@@ -96,6 +143,38 @@ function LinkedInPeopleDialogContent({
         </DialogHeader>
 
         <div className="flex flex-col gap-4 px-6 py-6">
+          <div className="flex flex-col gap-3 rounded-lg border bg-muted/20 p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="space-y-1">
+              <p className="text-sm font-medium">People search mode</p>
+              <p className="text-sm text-muted-foreground">{modeDescription}</p>
+            </div>
+
+            <ToggleGroup
+              aria-label="LinkedIn people search mode"
+              className="w-full sm:w-auto"
+              disabled={isBusy}
+              onValueChange={(value) => {
+                if (value === 'recruiters' || value === 'all') {
+                  setSelectedMode(value)
+                  setSearchError(null)
+                }
+              }}
+              type="single"
+              value={selectedMode}
+              variant="outline"
+            >
+              <ToggleGroupItem
+                className="flex-1 sm:flex-none"
+                value="recruiters"
+              >
+                Recruiters
+              </ToggleGroupItem>
+              <ToggleGroupItem className="flex-1 sm:flex-none" value="all">
+                All people
+              </ToggleGroupItem>
+            </ToggleGroup>
+          </div>
+
           {isBusy ? (
             <Card className="rounded-[1.5rem]">
               <CardContent className="flex flex-col items-center gap-4 py-10 text-center">
@@ -104,25 +183,41 @@ function LinkedInPeopleDialogContent({
                   <p className="font-medium">
                     {status === 'enriching'
                       ? 'Analyzing profiles'
-                      : 'Searching LinkedIn people'}
+                      : `Searching LinkedIn ${modeLabel}`}
                   </p>
                   <p className="text-sm text-muted-foreground">
                     {status === 'enriching'
-                      ? `Identifying relevant people at ${job.company}.`
-                      : `Looking for public profiles connected to ${job.company}.`}
+                      ? `Identifying relevant ${modeLabel} at ${job.company}.`
+                      : `Looking for public ${modeLabel} profiles connected to ${job.company}.`}
                   </p>
                 </div>
 
                 <div className="flex items-center gap-6 pt-2 text-xs text-muted-foreground">
                   <span className="inline-flex items-center gap-1.5">
-                    <Search className={`size-3.5 ${status === 'searching' ? 'text-foreground' : ''}`} />
-                    <span className={status === 'searching' ? 'font-medium text-foreground' : ''}>
+                    <Search
+                      className={`size-3.5 ${status === 'searching' ? 'text-foreground' : ''}`}
+                    />
+                    <span
+                      className={
+                        status === 'searching'
+                          ? 'font-medium text-foreground'
+                          : ''
+                      }
+                    >
                       {status === 'enriching' ? 'Searched' : 'Searching'}
                     </span>
                   </span>
                   <span className="inline-flex items-center gap-1.5">
-                    <Sparkles className={`size-3.5 ${status === 'enriching' ? 'text-foreground' : ''}`} />
-                    <span className={status === 'enriching' ? 'font-medium text-foreground' : ''}>
+                    <Sparkles
+                      className={`size-3.5 ${status === 'enriching' ? 'text-foreground' : ''}`}
+                    />
+                    <span
+                      className={
+                        status === 'enriching'
+                          ? 'font-medium text-foreground'
+                          : ''
+                      }
+                    >
                       Analyzing
                     </span>
                   </span>
@@ -131,22 +226,30 @@ function LinkedInPeopleDialogContent({
             </Card>
           ) : null}
 
-          {!isBusy && error ? (
+          {!isBusy && searchError ? (
             <Card className="rounded-[1.5rem] border-destructive/40">
               <CardHeader>
                 <CardTitle>Couldn&apos;t load people right now</CardTitle>
-                <CardDescription>{error}</CardDescription>
+                <CardDescription>{searchError}</CardDescription>
               </CardHeader>
+              <CardContent>
+                <Button className="rounded-full" onClick={handleRunSearch}>
+                  <Search data-icon="inline-start" />
+                  Try again
+                </Button>
+              </CardContent>
             </Card>
           ) : null}
 
-          {!isBusy && !error && peopleSearch !== null ? (
+          {!isBusy && !searchError && peopleSearch !== null ? (
             <Card className="rounded-[1.5rem]">
               <CardHeader className="gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="space-y-1">
-                  <CardTitle className="text-lg">{peopleSearch.summary}</CardTitle>
+                  <CardTitle className="text-lg">
+                    {peopleSearch.summary}
+                  </CardTitle>
                   <CardDescription>
-                    {peopleSearch.totalResults} people saved for this role.
+                    {peopleSearch.totalResults} {modeLabel} saved for this role.
                   </CardDescription>
                 </div>
                 <Badge variant="outline">
@@ -157,18 +260,21 @@ function LinkedInPeopleDialogContent({
             </Card>
           ) : null}
 
-          {!isBusy && !error && peopleSearch !== null && people.length === 0 ? (
+          {!isBusy &&
+          !searchError &&
+          peopleSearch !== null &&
+          people.length === 0 ? (
             <Card className="rounded-[1.5rem]">
               <CardContent className="py-8">
                 <p className="text-sm leading-6 text-muted-foreground">
-                  We didn&apos;t find strong public LinkedIn profile matches for
-                  this company yet.
+                  We didn&apos;t find strong public LinkedIn {modeLabel} profile
+                  matches for this company yet.
                 </p>
               </CardContent>
             </Card>
           ) : null}
 
-          {!isBusy && !error && people.length > 0 ? (
+          {!isBusy && !searchError && people.length > 0 ? (
             <div className="grid gap-4 md:grid-cols-2">
               {people.map((person) => (
                 <Card className="rounded-[1.5rem]" key={person.linkedinUrl}>
@@ -194,7 +300,11 @@ function LinkedInPeopleDialogContent({
                       ) : null}
                     </div>
 
-                    <Button asChild className="w-full rounded-full" variant="outline">
+                    <Button
+                      asChild
+                      className="w-full rounded-full"
+                      variant="outline"
+                    >
                       <a
                         href={person.linkedinUrl}
                         rel="noreferrer"

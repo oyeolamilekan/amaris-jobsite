@@ -1,7 +1,9 @@
 import type { QueryCtx } from '../_generated/server'
+import type { LinkedInPeopleSearchMode } from '../shared/constants'
 import {
   LINKEDIN_COMPANY_TERM_MAX_LENGTH,
   LINKEDIN_PEOPLE_PRIORITY_TERMS,
+  LINKEDIN_ROLE_TERM_MAX_LENGTH,
   MAX_LINKEDIN_PEOPLE_RESULTS,
 } from '../shared/constants'
 import type { StructuredLinkedInPerson } from '../shared/schemas'
@@ -31,10 +33,9 @@ export function queryAdminLinkedInSearchesByCreatedAt(
     return ctx.db.query('linkedinPeopleSearches').withIndex('by_createdAt')
   }
 
-  return ctx.db.query('linkedinPeopleSearches').withIndex(
-    'by_createdAt',
-    (q) => q.gte('createdAt', sinceTimestamp),
-  )
+  return ctx.db
+    .query('linkedinPeopleSearches')
+    .withIndex('by_createdAt', (q) => q.gte('createdAt', sinceTimestamp))
 }
 
 /**
@@ -75,43 +76,142 @@ function shorten(value: string, maxLength: number) {
   return value.slice(0, maxLength).trim()
 }
 
+function normalizeLinkedInProfileUrl(value: string): string | undefined {
+  let url: URL
+
+  try {
+    url = new URL(value)
+  } catch {
+    return undefined
+  }
+
+  const hostname = url.hostname.toLowerCase().replace(/^www\./, '')
+  if (!hostname.endsWith('linkedin.com')) return undefined
+
+  const segments = url.pathname.split('/').filter(Boolean)
+  const profileSegmentIndex = segments.findIndex((segment) => segment === 'in')
+  const slug = segments[profileSegmentIndex + 1]
+  if (profileSegmentIndex === -1 || !slug) return undefined
+
+  return `https://www.linkedin.com/in/${slug}`
+}
+
+function buildRoleTerms(jobTitle?: string) {
+  if (!jobTitle) return []
+
+  const roleTerm = shorten(
+    sanitizeQueryTerm(jobTitle),
+    LINKEDIN_ROLE_TERM_MAX_LENGTH,
+  )
+  if (!roleTerm) return []
+
+  const lowerRole = roleTerm.toLowerCase()
+  const roleFamilies = [
+    ['engineer', 'engineering manager'],
+    ['developer', 'engineering manager'],
+    ['designer', 'design manager'],
+    ['product', 'product manager'],
+    ['data', 'data manager'],
+    ['sales', 'sales manager'],
+    ['marketing', 'marketing manager'],
+    ['customer', 'customer success manager'],
+    ['finance', 'finance manager'],
+    ['recruit', 'recruiter'],
+  ] as const
+  const familyTerms = roleFamilies
+    .filter(([needle]) => lowerRole.includes(needle))
+    .map(([, term]) => term)
+
+  return Array.from(new Set([roleTerm, ...familyTerms]))
+}
+
+function scoreLinkedInResult(input: {
+  title: string
+  content: string
+  company: string | undefined
+  jobTitle: string | undefined
+  tavilyScore: number
+}) {
+  const haystack = `${input.title} ${input.content}`.toLowerCase()
+  let score = input.tavilyScore
+
+  if (input.company) {
+    const companyTerm = sanitizeQueryTerm(input.company).toLowerCase()
+    if (companyTerm && haystack.includes(companyTerm)) score += 2
+    if (companyTerm && haystack.includes(` at ${companyTerm}`)) score += 3
+  }
+
+  const priorityTerms = [
+    ...LINKEDIN_PEOPLE_PRIORITY_TERMS,
+    ...buildRoleTerms(input.jobTitle),
+  ]
+  for (const term of priorityTerms) {
+    if (haystack.includes(term.toLowerCase())) score += 1
+  }
+
+  if (/\b(profile|experience|connections?)\b/i.test(haystack)) score += 0.5
+  if (/\b(job|jobs|careers|salary|internship)\b/i.test(input.title)) score -= 2
+
+  return score
+}
+
 /**
  * Builds a deterministic LinkedIn people lookup query for a company, focused
  * on recruiter profiles and optional location biasing.
  *
  * @param input - The company context for the lookup.
  * @param input.company - The company name attached to the job result.
+ * @param input.jobTitle - Optional role title used to find adjacent hiring
+ * managers and team members.
  * @param input.location - Optional job location used to bias the query.
  * @returns A LinkedIn-focused Tavily query string.
  */
 export function buildLinkedInPeopleSearchQuery({
   company,
+  jobTitle,
   location,
+  mode,
 }: {
   company: string
+  jobTitle?: string
   location?: string
+  mode: LinkedInPeopleSearchMode
 }) {
   const companyTerm = shorten(
     sanitizeQueryTerm(company),
     LINKEDIN_COMPANY_TERM_MAX_LENGTH,
   )
+
+  if (mode === 'all') {
+    return ['site:linkedin.com/in', `"${companyTerm}"`]
+      .filter(Boolean)
+      .join(' ')
+  }
+
   const recruiterClauses = LINKEDIN_PEOPLE_PRIORITY_TERMS.map(
     (term) => `"${term}"`,
   ).join(' OR ')
+  const roleClauses = buildRoleTerms(jobTitle)
+    .map((term) => `"${term}"`)
+    .join(' OR ')
   const companyContext = [
     `"${companyTerm}"`,
-    `("at ${companyTerm}" OR "@ ${companyTerm}")`,
+    `("at ${companyTerm}" OR "@ ${companyTerm}" OR "${companyTerm} people")`,
   ].join(' AND ')
   const locationTerm = location ? sanitizeQueryTerm(location) : ''
-  const locationClause = locationTerm
-    ? `("${locationTerm}" OR "EU" OR "Europe") -India -Bangalore -USA`
-    : ''
-  const exclusionClause = ['-jobs', '-hiring', '-intern'].join(' ')
+  const locationClause =
+    locationTerm && !/^remote|unspecified$/i.test(locationTerm)
+      ? `"${shorten(locationTerm, LINKEDIN_ROLE_TERM_MAX_LENGTH)}"`
+      : ''
+  const peopleClauses = roleClauses
+    ? `(${recruiterClauses} OR ${roleClauses})`
+    : `(${recruiterClauses})`
+  const exclusionClause = ['-jobs', '-job', '-careers', '-internship'].join(' ')
 
   return [
     'site:linkedin.com/in',
     companyContext,
-    `(${recruiterClauses})`,
+    peopleClauses,
     locationClause,
     exclusionClause,
   ]
@@ -197,12 +297,16 @@ function extractLocation(content: string): string | undefined {
  */
 export function structureLinkedInPeopleResults(
   tavilyResults: TavilySearchResult,
+  context?: { company?: string; jobTitle?: string },
 ): {
   summary: string
   people: (StructuredLinkedInPerson & { linkedinUrl: string })[]
 } {
   const people = tavilyResults.results
     .map((result) => {
+      const linkedinUrl = normalizeLinkedInProfileUrl(result.url)
+      if (!linkedinUrl) return null
+
       const { name, headline } = parseLinkedInTitle(result.title)
       if (!name) return null
 
@@ -211,16 +315,26 @@ export function structureLinkedInPeopleResults(
         .replace(/\s+/g, ' ')
         .trim()
 
+      const score = scoreLinkedInResult({
+        title: result.title,
+        content,
+        company: context?.company,
+        jobTitle: context?.jobTitle,
+        tavilyScore: result.score,
+      })
       const location = extractLocation(content)
 
       return {
         name,
         headline,
-        linkedinUrl: result.url,
+        linkedinUrl,
+        score,
         ...(location ? { location } : {}),
       }
     })
     .filter((p): p is NonNullable<typeof p> => p !== null)
+    .sort((a, b) => b.score - a.score)
+    .map(({ score, ...person }) => person)
 
   return {
     summary:
@@ -249,11 +363,19 @@ export function normalizeLinkedInPeople(
   }>,
 ) {
   const seenUrls = new Set<string>()
+  const seenNames = new Set<string>()
 
   return people
     .filter((person) => {
-      if (seenUrls.has(person.linkedinUrl)) return false
-      seenUrls.add(person.linkedinUrl)
+      const linkedinUrl = normalizeLinkedInProfileUrl(person.linkedinUrl)
+      if (!linkedinUrl || seenUrls.has(linkedinUrl)) return false
+
+      const nameKey = person.name?.trim().toLowerCase()
+      if (nameKey && seenNames.has(nameKey)) return false
+
+      person.linkedinUrl = linkedinUrl
+      seenUrls.add(linkedinUrl)
+      if (nameKey) seenNames.add(nameKey)
       return true
     })
     .slice(0, MAX_LINKEDIN_PEOPLE_RESULTS)
